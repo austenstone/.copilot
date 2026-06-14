@@ -76,6 +76,24 @@ share_extension / install_extension
 - Action names starting with `canvas.` are reserved.
 - Action context uses `ctx.canvasId`, not `ctx.id`.
 
+## Canvas → model communication (RPC)
+
+- Stage context to chat without firing a turn: `session.rpc.extensions.sendAttachmentsToMessage({ instanceId, attachments: [{ type: "extension_context", title, payload }] })`.
+- It drops a composer pill the user can multi-select; it rides along with their NEXT manual send as `<extension_context>` XML. Use this over auto-sending a prompt.
+- `payload` is REQUIRED on each attachment — pass `null`, never `undefined`.
+- Thread `instanceId` through so the pill lands on the right session/composer.
+- To fire a turn yourself instead, send via the session message API — but prefer staging; it's the cleaner UX (human stays in control).
+
+## Build & SDK gotchas
+
+- tsc resolves `@github/copilot-sdk/extension` from a LOCAL ambient shim (e.g. `src/sdk.d.ts`), NOT node_modules — any SDK API you call MUST be declared there or typecheck fails.
+- Mark the real SDK `external` in the bundler (`build.mjs`); the CLI resolves it at runtime only.
+- `index.html` is served directly, NOT bundled — HTML edits apply on deploy + reload with no rebuild (but still `cp` it).
+- `strict` + `noUnusedLocals`/`noUnusedParameters`: removing one feature cascades into deleting all its now-orphaned helpers. Delete whole functions, not just call sites.
+- Deleting a function signature but leaving its body yields `TS1128` (dangling block) — surgical deletes need both halves.
+- Deploy target is often a full git checkout — only `cp` build outputs (`extension.mjs`, `index.html`, `web/*`), respecting the `web/` subdir.
+- Loopback port changes on every reload — never hardcode it.
+
 ## Debug order
 
 1. `extensions_manage({ operation: "list" })`, check loaded vs failed.
