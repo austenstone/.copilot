@@ -1,4 +1,0 @@
-[submodule "skills"]
-	path = skills
-	url = git@github.com:austenstone/skills.git
-	branch = main
