@@ -62,7 +62,7 @@ params = {}
 for env, key in (("ASPECT", "aspectRatio"), ("RESOLUTION", "resolution"), ("DURATION", "durationSeconds")):
     v = os.environ.get(env)
     if v:
-        params[key] = v
+        params[key] = int(v) if key == "durationSeconds" else v
 
 body = {"instances": [instance]}
 if params:
