@@ -7,18 +7,38 @@ My personal GitHub Copilot customizations, synced from `~/.copilot`. Drop these 
 | Path | What it is |
 | --- | --- |
 | `copilot-instructions.md` | Top-level pointer to the instruction set |
-| `instructions/` | Always-on custom instructions (identity, personality, coding standards, web/shell use) |
-| `skills/` | Portable agent skills, tracked separately at [`austenstone/skills`](https://github.com/austenstone/skills), that Copilot loads on demand |
+| `instructions/` | Always-on instructions (identity, personality, coding standards, web use) |
+| `skills/` | Agent skills, tracked at [austenstone/skills](https://github.com/austenstone/skills) |
+| `agents/` | Custom agents |
 | `hooks/` | Lifecycle hooks + `setup-hooks` installer |
-| `mcp-config.example.json` | Sanitized MCP server config. Secrets are `${ENV_VAR}` placeholders |
+| `plugin.json` | Copilot CLI plugin manifest |
+| `.mcp.json` | Distributable MCP servers (public packages only) |
+| `mcp-config.example.json` | Full personal MCP config. Secrets are `${ENV_VAR}` placeholders |
 
 ## Usage
+
+### Plugin install (recommended)
+
+Install as a Copilot CLI plugin from a local clone (required to pull the `skills` submodule):
+
+```bash
+git clone --recurse-submodules https://github.com/austenstone/.copilot
+copilot plugin install ./.copilot
+```
+
+Verify it loaded:
+
+```bash
+copilot plugin list
+```
+
+### Manual install
 
 Personal (applies everywhere):
 
 ```bash
-cp -R instructions skills hooks ~/.copilot/
-cp copilot-instructions.md ~/.copilot/
+cp -R instructions skills hooks agents ~/.copilot/
+cp copilot-instructions.md plugin.json .mcp.json ~/.copilot/
 ```
 
 Per-repo:
@@ -32,19 +52,23 @@ cp -R skills .github/skills
 
 ## MCP config
 
-`mcp-config.example.json` is sanitized. Copy it to your live config and fill in the secrets:
+The plugin ships `.mcp.json` with public, no-auth-needed servers. One env var is needed if you want Brave Search:
+
+- `BRAVE_API_KEY`
+
+For the full personal config (all servers including GitHub-internal and OAuth): copy the example and fill in secrets:
 
 ```bash
 cp mcp-config.example.json ~/.copilot/mcp-config.json
 ```
 
-Set these in your environment (the live config is gitignored):
+Additional env vars for the full config:
 
-- `BRAVE_API_KEY`
 - `PLAYWRIGHT_MCP_EXTENSION_TOKEN`
 - `TFE_TOKEN`
 
 ## Notes
 
+- `skills/` is a git submodule ([austenstone/skills](https://github.com/austenstone/skills)). Use `--recurse-submodules` when cloning or the plugin install won't bundle them.
 - The real `mcp-config.json` is gitignored. Only the sanitized example is tracked.
 - `skills/google-search/profile/` (browser session data) is excluded.

@@ -15,6 +15,10 @@
 !instructions/**
 !skills/
 !skills/**
+!agents/
+!agents/**
+!plugin.json
+!.mcp.json
 
 # Generated or sensitive skill/runtime state.
 .DS_Store
