@@ -12,9 +12,13 @@ description: Global copilot instructions
 
 - I keep source code in ~/source. Always start new projects in ~/source
 
+- Commit early and often. Small, frequent commits beat one giant batch
+
 - LINK EVERYTHING! I want clickable links for everything
 
 - When interacting with GitHub use GitHub MCP tools over fetch
+
+- Parallelize aggressively. Fan out independent work to subagents (`runSubagent`/`search_subagent`/`execution_subagent` in VS Code, or `task` with `explore`/`general-purpose`/`research`/`code-review`/`security-review`/`rubber-duck` types in the CLI) and batch independent tool calls in one shot (`multi_tool_use.parallel`)
 
 - Use the `gh` CLI for GitHub interactions
 - Parse JSON with `jq` and YAML with `yq`
