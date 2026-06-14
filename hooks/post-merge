@@ -1,4 +1,0 @@
-#!/bin/sh
-git submodule update --remote --merge
-# If skills pointer moved, commit it so .copilot stays in sync
-git diff --quiet HEAD -- skills || git add skills && git commit -m "chore: sync skills submodule"
