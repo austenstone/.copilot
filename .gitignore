@@ -23,6 +23,8 @@
 !.mcp.json
 !.github/
 !.github/**
+!extensions/
+!extensions/**
 
 # Generated or sensitive skill/runtime state.
 .DS_Store

@@ -1,0 +1,3 @@
+[submodule "extensions/actions-workflow-viz"]
+	path = extensions/actions-workflow-viz
+	url = git@github.com:austenstone/actions-workflow-viz.git

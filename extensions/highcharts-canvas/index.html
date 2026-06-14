@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Highcharts</title>
+		<style>
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+				height: 100%;
+				background: var(--background-color-default, #ffffff);
+				color: var(--text-color-default, #1f2328);
+				font-family: var(
+					--font-sans,
+					-apple-system,
+					BlinkMacSystemFont,
+					"Segoe UI",
+					sans-serif
+				);
+				font-size: var(--text-body-medium, 14px);
+				line-height: var(--leading-body-medium, 20px);
+			}
+			#chart,
+			#dashboard,
+			#grid {
+				width: 100%;
+				height: 100%;
+				min-height: 240px;
+			}
+			#empty {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100%;
+				color: var(--text-color-muted, #59636e);
+				padding: 1rem;
+				text-align: center;
+			}
+			.hidden {
+				display: none !important;
+			}
+			.highcharts-contextbutton .highcharts-button-symbol { stroke: var(--text-color-muted, #59636e); }
+			.highcharts-contextbutton rect.highcharts-button-box { fill: var(--background-color-muted, transparent); stroke: var(--border-color-muted, transparent); }
+			.highcharts-contextbutton.highcharts-button-hover rect.highcharts-button-box { fill: var(--background-color-emphasis, #f6f8fa); }
+			.highcharts-menu { background: var(--background-color-overlay, #ffffff) !important; border: 1px solid var(--border-color-default, #d0d7de) !important; box-shadow: var(--shadow-medium, 0 3px 6px rgba(0,0,0,0.15)) !important; color: var(--text-color-default, #1f2328) !important; }
+			.highcharts-menu-item { color: var(--text-color-default, #1f2328) !important; }
+			.highcharts-menu-item:hover { background: var(--background-color-emphasis, #f6f8fa) !important; color: var(--text-color-default, #1f2328) !important; }
+		</style>
+		<script src="https://code.highcharts.com/highcharts.js"></script>
+		<script src="https://code.highcharts.com/highcharts-more.js"></script>
+		<script src="https://code.highcharts.com/highcharts-3d.js"></script>
+		<script src="https://code.highcharts.com/modules/stock.js"></script>
+		<script src="https://code.highcharts.com/modules/map.js"></script>
+		<script src="https://code.highcharts.com/modules/gantt.js"></script>
+		<script src="https://code.highcharts.com/modules/exporting.js"></script>
+		<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+		<script src="https://code.highcharts.com/modules/heatmap.js"></script>
+		<script src="https://code.highcharts.com/modules/sankey.js"></script>
+		<script src="https://code.highcharts.com/modules/treemap.js"></script>
+		<script src="https://code.highcharts.com/modules/wordcloud.js"></script>
+		<script src="https://code.highcharts.com/modules/funnel.js"></script>
+		<script src="https://code.highcharts.com/modules/networkgraph.js"></script>
+		<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+		<script src="https://code.highcharts.com/modules/annotations.js"></script>
+		<script src="https://code.highcharts.com/stock/indicators/indicators-all.js"></script>
+		<script src="https://code.highcharts.com/modules/drag-panes.js"></script>
+		<script src="https://code.highcharts.com/modules/topojson.js"></script>
+		<script src="https://code.highcharts.com/dashboards/dashboards.js"></script>
+		<script src="https://code.highcharts.com/dashboards/modules/layout.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@highcharts/grid-lite/grid-lite.js"></script>
+		<script src="https://code.highcharts.com/themes/adaptive.js"></script>
+		<link
+			rel="stylesheet"
+			href="https://code.highcharts.com/dashboards/css/dashboards.css"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/@highcharts/grid-lite/css/grid-lite.css"
+		/>
+	</head>
+	<body>
+		<div id="empty">Waiting for chart data…</div>
+		<div id="chart" class="hidden"></div>
+		<div id="dashboard" class="hidden"></div>
+		<div id="grid" class="hidden"></div>
+		<script>
+			const els = {
+				empty: document.getElementById("empty"),
+				chart: document.getElementById("chart"),
+				dashboard: document.getElementById("dashboard"),
+				grid: document.getElementById("grid"),
+			};
+			let chartInstance = null;
+			let dashboardInstance = null;
+			let gridInstance = null;
+
+			function isDarkMode() {
+				return document.documentElement.getAttribute("data-color-mode") === "dark";
+			}
+
+			let lastState = null;
+
+			function syncHighchartsMode() {
+				const dark = isDarkMode();
+				document.body.classList.toggle("highcharts-dark", dark);
+				document.body.classList.toggle("highcharts-light", !dark);
+			}
+			syncHighchartsMode();
+
+			function cssVar(name, fallback) {
+				const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+				return v || fallback;
+			}
+
+			function themeColors() {
+				const text = cssVar("--text-color-default", "#1f2328");
+				const muted = cssVar("--text-color-muted", "#59636e");
+				const line = cssVar("--border-color-muted", "rgba(208,215,222,0.5)");
+				const palette = [
+					"--color-data-blue-emphasis",
+					"--color-data-green-emphasis",
+					"--color-data-orange-emphasis",
+					"--color-data-purple-emphasis",
+					"--color-data-pink-emphasis",
+					"--color-data-teal-emphasis",
+					"--color-data-yellow-emphasis",
+					"--color-data-red-emphasis",
+				]
+					.map((v) => cssVar(v, ""))
+					.filter(Boolean);
+				return { text, muted, line, palette };
+			}
+
+			function applyThemeDefaults(options) {
+				const { text, muted, line, palette } = themeColors();
+				const merged = structuredClone(options);
+				merged.chart = { backgroundColor: "transparent", ...(merged.chart || {}) };
+				merged.chart.style = { color: text, ...(merged.chart.style || {}) };
+				if (palette.length && !merged.colors) merged.colors = palette;
+				merged.title = merged.title || {};
+				merged.title.style = { color: text, ...(merged.title.style || {}) };
+				merged.subtitle = merged.subtitle || {};
+				merged.subtitle.style = { color: muted, ...(merged.subtitle.style || {}) };
+				merged.xAxis = mergeAxis(merged.xAxis, text, muted, line);
+				merged.yAxis = mergeAxis(merged.yAxis, text, muted, line);
+				merged.legend = merged.legend || {};
+				merged.legend.itemStyle = { color: text, ...(merged.legend.itemStyle || {}) };
+				merged.legend.itemHoverStyle = { color: muted, ...(merged.legend.itemHoverStyle || {}) };
+				merged.tooltip = { backgroundColor: cssVar("--background-color-overlay", "#ffffff"), style: { color: text }, ...(merged.tooltip || {}) };
+				return merged;
+			}
+
+			function mergeAxis(axis, text, muted, line) {
+				if (!axis) return axis;
+				const apply = (a) => ({
+					gridLineColor: line,
+					lineColor: line,
+					tickColor: line,
+					minorGridLineColor: line,
+					...a,
+					labels: { ...(a?.labels || {}), style: { color: muted, ...(a?.labels?.style || {}) } },
+					title: { ...(a?.title || {}), style: { color: text, ...(a?.title?.style || {}) } },
+				});
+				return Array.isArray(axis) ? axis.map(apply) : apply(axis);
+			}
+
+			function showOnly(which) {
+				for (const k of Object.keys(els)) els[k].classList.add("hidden");
+				els[which].classList.remove("hidden");
+			}
+
+			async function renderMap(state) {
+				const opts = applyThemeDefaults(state.options);
+				if (state.mapData) {
+					try {
+						let mapData = state.mapData;
+						if (/^https?:/i.test(state.mapData)) {
+							const r = await fetch(state.mapData);
+							mapData = await r.json();
+						} else if (typeof state.mapData === "string") {
+							mapData = JSON.parse(state.mapData);
+						}
+						opts.chart = opts.chart || {};
+						opts.chart.map = mapData;
+					} catch (e) {
+						console.error("mapData fetch failed", e);
+					}
+				}
+				showOnly("chart");
+				if (chartInstance) chartInstance.destroy();
+				chartInstance = Highcharts.mapChart("chart", opts);
+			}
+
+			function render(state) {
+				lastState = state;
+				if (!state || !state.options) {
+					showOnly("empty");
+					return;
+				}
+				try {
+					if (chartInstance) {
+						chartInstance.destroy();
+						chartInstance = null;
+					}
+					if (dashboardInstance) {
+						dashboardInstance.destroy?.();
+						dashboardInstance = null;
+					}
+					if (gridInstance) {
+						gridInstance.destroy?.();
+						gridInstance = null;
+					}
+					const opts = applyThemeDefaults(state.options);
+					switch (state.kind) {
+						case "stock":
+							showOnly("chart");
+							chartInstance = Highcharts.stockChart("chart", opts);
+							break;
+						case "map":
+							renderMap(state);
+							break;
+						case "gantt":
+							showOnly("chart");
+							chartInstance = Highcharts.ganttChart("chart", opts);
+							break;
+						case "dashboard":
+							showOnly("dashboard");
+							dashboardInstance = Dashboards.board("dashboard", state.options);
+							break;
+						case "grid":
+							showOnly("grid");
+							gridInstance = Grid.grid("grid", state.options);
+							break;
+						default:
+							showOnly("chart");
+							chartInstance = Highcharts.chart("chart", opts);
+					}
+				} catch (e) {
+					els.empty.textContent = "Render error: " + (e.message || e);
+					showOnly("empty");
+					console.error(e);
+				}
+			}
+
+			async function applyAndRender(state) {
+				syncHighchartsMode();
+				render(state);
+			}
+
+			const es = new EventSource("/events");
+			es.onmessage = (e) => {
+				try {
+					applyAndRender(JSON.parse(e.data));
+				} catch {}
+			};
+
+			new MutationObserver(() => lastState && applyAndRender(lastState)).observe(
+				document.documentElement,
+				{ attributes: true, attributeFilter: ["data-color-mode", "data-dark-theme", "data-light-theme"] },
+			);
+		</script>
+	</body>
+</html>
