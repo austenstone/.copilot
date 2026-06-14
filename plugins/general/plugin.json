@@ -11,7 +11,8 @@
   "keywords": ["general", "productivity", "ai"],
   "skills": [
     "skills/grill-me",
-    "skills/personal-intelligence"
+    "skills/personal-intelligence",
+    "skills/summarize"
   ],
   "agents": [],
   "mcpServers": {
