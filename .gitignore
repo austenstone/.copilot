@@ -18,6 +18,8 @@
 !agents/
 !agents/**
 !plugin.json
+!plugins/
+!plugins/**
 !.mcp.json
 !.github/
 !.github/**

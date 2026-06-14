@@ -1,0 +1,17 @@
+{
+  "name": "general",
+  "description": "General-purpose AI interaction skills.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/austenstone/.copilot",
+  "keywords": ["general", "productivity", "ai"],
+  "skills": [
+    "../../skills/grill-me",
+    "../../skills/personal-intelligence"
+  ],
+  "agents": []
+}

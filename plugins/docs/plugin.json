@@ -1,0 +1,18 @@
+{
+  "name": "docs",
+  "description": "Document creation and manipulation skills: Word, Excel, and PowerPoint.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/austenstone/.copilot",
+  "keywords": ["docs", "docx", "xlsx", "pptx", "word", "excel", "powerpoint"],
+  "skills": [
+    "../../skills/docx",
+    "../../skills/pptx",
+    "../../skills/xlsx"
+  ],
+  "agents": []
+}

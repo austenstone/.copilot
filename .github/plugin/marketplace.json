@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "copilot",
-      "description": "Personal Copilot skills, agents, and MCP servers from Austen Stone.",
+      "description": "MCP servers from Austen Stone.",
       "version": "1.0.0",
       "author": {
         "name": "Austen Stone",
@@ -20,8 +20,78 @@
       "license": "MIT",
       "repository": "https://github.com/austenstone/.copilot",
       "homepage": "https://github.com/austenstone/.copilot",
-      "keywords": ["github", "copilot", "skills", "mcp"],
+      "keywords": ["github", "copilot", "mcp"],
       "source": "."
+    },
+    {
+      "name": "google",
+      "description": "Google search, Gemini AI, and browser automation skills.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Austen Stone",
+        "url": "https://github.com/austenstone"
+      },
+      "license": "MIT",
+      "repository": "https://github.com/austenstone/.copilot",
+      "homepage": "https://github.com/austenstone/.copilot",
+      "keywords": ["google", "gemini", "search", "playwright"],
+      "source": "plugins/google"
+    },
+    {
+      "name": "github",
+      "description": "GitHub-specific skills: tokens, media, Copilot extension authoring, and personal AI context.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Austen Stone",
+        "url": "https://github.com/austenstone"
+      },
+      "license": "MIT",
+      "repository": "https://github.com/austenstone/.copilot",
+      "homepage": "https://github.com/austenstone/.copilot",
+      "keywords": ["github", "copilot", "skills", "extensions"],
+      "source": "plugins/github"
+    },
+    {
+      "name": "docs",
+      "description": "Document creation and manipulation skills: Word, Excel, and PowerPoint.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Austen Stone",
+        "url": "https://github.com/austenstone"
+      },
+      "license": "MIT",
+      "repository": "https://github.com/austenstone/.copilot",
+      "homepage": "https://github.com/austenstone/.copilot",
+      "keywords": ["docs", "docx", "xlsx", "pptx"],
+      "source": "plugins/docs"
+    },
+    {
+      "name": "copilot-authoring",
+      "description": "Skills for authoring GitHub Copilot skills and extensions.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Austen Stone",
+        "url": "https://github.com/austenstone"
+      },
+      "license": "MIT",
+      "repository": "https://github.com/austenstone/.copilot",
+      "homepage": "https://github.com/austenstone/.copilot",
+      "keywords": ["github", "copilot", "skills", "extensions", "authoring"],
+      "source": "plugins/copilot"
+    },
+    {
+      "name": "general",
+      "description": "General-purpose AI interaction skills.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Austen Stone",
+        "url": "https://github.com/austenstone"
+      },
+      "license": "MIT",
+      "repository": "https://github.com/austenstone/.copilot",
+      "homepage": "https://github.com/austenstone/.copilot",
+      "keywords": ["general", "productivity", "ai"],
+      "source": "plugins/general"
     }
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "name": "github",
+  "description": "GitHub-specific skills: tokens and media.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/austenstone/.copilot",
+  "keywords": ["github"],
+  "skills": [
+    "../../skills/fgpat-deeplink",
+    "../../skills/github-media"
+  ],
+  "agents": []
+}

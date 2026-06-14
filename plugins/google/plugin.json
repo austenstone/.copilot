@@ -1,0 +1,20 @@
+{
+  "name": "google",
+  "description": "Google search, Gemini AI, and browser automation skills.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/austenstone/.copilot",
+  "keywords": ["google", "gemini", "search", "playwright", "browser"],
+  "skills": [
+    "../../skills/google-search",
+    "../../skills/gemini-cli",
+    "../../skills/gemini-image",
+    "../../skills/gemini-video",
+    "../../skills/playwright"
+  ],
+  "agents": []
+}

@@ -10,7 +10,7 @@
   "repository": "https://github.com/austenstone/.copilot",
   "homepage": "https://github.com/austenstone/.copilot",
   "keywords": ["github", "copilot", "skills", "mcp"],
-  "skills": "skills/",
-  "agents": "agents/",
+  "skills": [],
+  "agents": [],
   "mcpServers": ".mcp.json"
 }
