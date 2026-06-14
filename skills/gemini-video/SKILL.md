@@ -88,6 +88,5 @@ Veo prompts reward cinematic detail. Cover these elements:
 
 - `404 ... not found for API version v1beta`: wrong/dead model name. Use one from the table.
 - `GEMINI_API_KEY not set`: export the key first.
-- `exceeded its monthly spending cap` (429 RESOURCE_EXHAUSTED): the key's project hit its spend cap. Raise it at https://ai.studio/spend. Veo is paid-only, there's no free tier.
 - Video blocked by safety/audio filter: Veo sometimes refuses (you're not charged). Rework the prompt.
 - Polls forever: check the kickoff response for an `error` field; a bad param (e.g. `4k` with non-8s duration) fails the operation.
