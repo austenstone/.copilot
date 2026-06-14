@@ -10,7 +10,7 @@
   },
   "plugins": [
     {
-      "name": "austenstone-copilot",
+      "name": "copilot",
       "description": "Personal Copilot skills, agents, and MCP servers from Austen Stone.",
       "version": "1.0.0",
       "author": {

@@ -21,7 +21,7 @@ My personal GitHub Copilot customizations, synced from `~/.copilot`. Drop these 
 
 ```bash
 copilot plugin marketplace add austenstone/.copilot
-copilot plugin install austenstone-copilot@austenstone
+copilot plugin install copilot@austenstone
 ```
 
 ### Manual install
