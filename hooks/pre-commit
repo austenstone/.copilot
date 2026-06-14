@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+# Validate frontmatter of any staged SKILL.md files before commit.
+staged=$(git diff --cached --name-only --diff-filter=ACM | grep -E 'SKILL\.md$' || true)
+[ -z "$staged" ] && exit 0
+
+paths=()
+while IFS= read -r f; do
+  [ -n "$f" ] && paths+=("$(git rev-parse --show-toplevel)/$f")
+done <<< "$staged"
+
+node "$HOME/.copilot/skills/skill-audit/scripts/validate-skills.mjs" "${paths[@]}"
