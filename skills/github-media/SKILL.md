@@ -23,7 +23,7 @@ Only use this when visuals genuinely improve reviewer understanding.
 2. Resolve authentication and the repository database ID:
    ```bash
    TOKEN=$(gh auth token)
-   REPO_ID=$(gh repo view --json databaseId -q .databaseId)
+   REPO_ID=$(gh api repos/{owner}/{repo} -q .id)
    ```
 
 3. Upload the raw media bytes to GitHub:
