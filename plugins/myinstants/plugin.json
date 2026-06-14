@@ -1,0 +1,22 @@
+{
+  "name": "myinstants",
+  "description": "Soundboard for your AI agent via the myinstants.com MCP server: search, browse, and play meme sounds.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/austenstone/myinstants-mcp",
+  "homepage": "https://github.com/austenstone/myinstants-mcp",
+  "keywords": ["mcp", "soundboard", "myinstants", "sounds", "memes", "audio"],
+  "skills": [],
+  "agents": [],
+  "mcpServers": {
+    "myinstants": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "myinstants-mcp@latest"]
+    }
+  }
+}
