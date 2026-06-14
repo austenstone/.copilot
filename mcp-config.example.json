@@ -1,0 +1,325 @@
+{
+  "mcpServers": {
+    "revenue-copilot": {
+      "tools": [
+        "wordpress",
+        "salesforce",
+        "odometer",
+        "github"
+      ],
+      "type": "http",
+      "url": "https://revenue-mcp-server.githubapp.com/mcp"
+    },
+    "workiq": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@microsoft/workiq@latest",
+        "mcp"
+      ]
+    },
+    "linkedin": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-linkedin@latest"
+      ],
+      "env": {
+        "UV_HTTP_TIMEOUT": "300"
+      }
+    },
+    "notebooklm": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "notebooklm-mcp@latest"
+      ]
+    },
+    "splunk": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/Users/austenstone/source/austenstone-notes/tools/llm-assist/tools/mcp_splunk_readonly_server.py"
+      ]
+    },
+    "azure": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure/mcp@latest",
+        "server",
+        "start"
+      ]
+    },
+    "fabric-rti-mcp": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "microsoft-fabric-rti-mcp"
+      ],
+      "env": {
+        "KUSTO_SERVICE_URI": "https://gh-analytics.eastus.kusto.windows.net/",
+        "KUSTO_SERVICE_DEFAULT_DB": "snapshots",
+        "KUSTO_KNOWN_SERVICES": "[{\"service_uri\":\"https://gh-analytics.eastus.kusto.windows.net/\",\"default_database\":\"snapshots\",\"description\":\"GitHub Analytics (snapshots, hydro, c360, canonical, zendesk)\"},{\"service_uri\":\"https://githubactions.eastus2.kusto.windows.net/\",\"default_database\":\"Actions\",\"description\":\"Actions Proxima (East US 2 / Dotcom)\"},{\"service_uri\":\"https://githubactionsprox.westeurope.kusto.windows.net/\",\"default_database\":\"Actions\",\"description\":\"Actions Proxima (West Europe)\"},{\"service_uri\":\"https://githubactionsproxeau.australiaeast.kusto.windows.net/\",\"default_database\":\"Actions\",\"description\":\"Actions Proxima (Australia East)\"},{\"service_uri\":\"https://ghdwprod.eastus.kusto.windows.net/\",\"default_database\":\"hydro\",\"description\":\"GitHub DW - Dotcom (East US)\"}]"
+      }
+    },
+    "highcharts": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-highcharts@latest"
+      ],
+      "env": {
+        "IMAGE_EXPORT": "true"
+      }
+    },
+    "brave-search": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@brave/brave-search-mcp-server",
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "chrome-devtools": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--autoConnect"
+      ]
+    },
+    "m365-calendar": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_CalendarTools"
+    },
+    "m365-mail": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_MailTools"
+    },
+    "m365-copilot-chat": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_M365Copilot"
+    },
+    "m365-user": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_MeServer"
+    },
+    "m365-teams": {
+      "tools": [
+        "ListChats",
+        "ListChatMessages",
+        "GetChat",
+        "GetChatMessage",
+        "SearchTeamsMessages",
+        "SearchTeamMessagesQueryParameters",
+        "GetUserPresence",
+        "SendMessageToChat",
+        "ReplyToChannelMessage",
+        "GetRichMessageFormats"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_TeamsServer"
+    },
+    "m365-word": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_WordServer"
+    },
+    "m365-onedrive": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_OneDriveRemoteServer"
+    },
+    "m365-sharepoint": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_SharePointRemoteServer"
+    },
+    "m365-admin": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_AdminTools"
+    },
+    "microsoft-learn": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "seismic": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://mcp.seismic.com/v1/tenants/github",
+      "oauthClientId": "94e8e80a-75c9-4992-bca7-8c19678b79fa",
+      "oauthPublicClient": true
+    },
+    "qubot-trino": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "bash",
+      "args": [
+        "-c",
+        "exec uvx --from git+https://github.com/weijie-tan3/trino-mcp trino-mcp --trino-user \"${GITHUB_USER:-$USER}\""
+      ],
+      "env": {
+        "TRINO_HOST": "trino-canary.warehouse.service.github.net",
+        "TRINO_CATALOG": "delta",
+        "TRINO_SCHEMA": "canonical",
+        "TRINO_MCP_CUSTOM_WATERMARK": "{\"qubot_setup\": \"Direct Repo Clone\"}",
+        "AUTH_METHOD": "OAuth2"
+      }
+    },
+    "slack": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://mcp.slack.com/mcp",
+      "oauthClientId": "12348411142.11062036567072",
+      "oauthPublicClient": true
+    },
+    "playwright-extension": {
+      "tools": [
+        "*"
+      ],
+      "type": "local",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--extension"
+      ],
+      "env": {
+        "PLAYWRIGHT_MCP_EXTENSION_TOKEN": "${PLAYWRIGHT_MCP_EXTENSION_TOKEN}"
+      }
+    },
+    "playwright-headless": {
+      "tools": [
+        "*"
+      ],
+      "type": "local",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--headless",
+        "--isolated"
+      ]
+    },
+    "chrome-bridge": {
+      "tools": [
+        "*"
+      ],
+      "timeout": 30000,
+      "type": "http",
+      "url": "http://127.0.0.1:12306/mcp"
+    },
+    "fabric-iq": {
+      "tools": [
+        "*"
+      ],
+      "type": "http",
+      "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/integrations/m365",
+      "headers": {
+        "X-Variants": "Fabric.Routing.LargeModelJMESPath"
+      }
+    },
+    "terraform": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "/Users/austenstone/go/bin/terraform-mcp-server",
+      "args": [
+        "stdio"
+      ],
+      "env": {
+        "TFE_ADDRESS": "https://app.terraform.io",
+        "TFE_TOKEN": "${TFE_TOKEN}"
+      }
+    },
+    "primer": {
+      "tools": [
+        "*"
+      ],
+      "type": "local",
+      "command": "npx",
+      "args": [
+        "@primer/mcp@latest"
+      ]
+    },
+    "context7": {
+      "tools": [
+        "*"
+      ],
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    }
+  }
+}

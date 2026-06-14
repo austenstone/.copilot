@@ -1,0 +1,9 @@
+.DS_Store
+node_modules/
+*.log
+
+# Live MCP config holds secrets — only the sanitized example is tracked
+mcp-config.json
+
+# Browser/session profile data from skills
+skills/google-search/profile/

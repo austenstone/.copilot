@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+TARGET="${1:-.}"
+HOOKS_DIR="$TARGET/.github/hooks"
+SOURCE="$HOME/.copilot/hooks/hooks.json"
+if [ ! -f "$SOURCE" ]; then
+  echo "Error: Source hooks.json not found at $SOURCE"
+  exit 1
+fi
+mkdir -p "$HOOKS_DIR"
+cp "$SOURCE" "$HOOKS_DIR/hooks.json"
+echo "Copilot hooks installed at $HOOKS_DIR/hooks.json"
