@@ -19,6 +19,8 @@
 !agents/**
 !plugin.json
 !.mcp.json
+!.github/
+!.github/**
 
 # Generated or sensitive skill/runtime state.
 .DS_Store

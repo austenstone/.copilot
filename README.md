@@ -19,17 +19,9 @@ My personal GitHub Copilot customizations, synced from `~/.copilot`. Drop these 
 
 ### Plugin install
 
-The `skills/` directory is a git submodule, so the GitHub-direct install (`austenstone/.copilot`) won't include skills. Clone locally first:
-
 ```bash
-git clone --recurse-submodules https://github.com/austenstone/.copilot /tmp/austenstone-copilot
-copilot plugin install /tmp/austenstone-copilot
-```
-
-Verify it loaded:
-
-```bash
-copilot plugin list
+copilot plugin marketplace add austenstone/.copilot
+copilot plugin install austenstone-copilot@austenstone
 ```
 
 ### Manual install
