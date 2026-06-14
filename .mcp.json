@@ -1,0 +1,49 @@
+{
+  "mcpServers": {
+    "workiq": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@microsoft/workiq@latest", "mcp"]
+    },
+    "notebooklm": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["notebooklm-mcp@latest"]
+    },
+    "highcharts": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-highcharts@latest"],
+      "env": {
+        "IMAGE_EXPORT": "true"
+      }
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect"]
+    },
+    "playwright-headless": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless", "--isolated"]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "brave-search": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@brave/brave-search-mcp-server", "--transport", "stdio"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    }
+  }
+}
