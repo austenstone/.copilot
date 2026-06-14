@@ -8,7 +8,7 @@ My personal GitHub Copilot customizations, synced from `~/.copilot`. Drop these 
 | --- | --- |
 | `copilot-instructions.md` | Top-level pointer to the instruction set |
 | `instructions/` | Always-on custom instructions (identity, personality, coding standards, web/shell use) |
-| `skills/` | Agent skills Copilot loads on demand (docx, pptx, xlsx, excalidraw, gemini-*, google-search, write-a-skill, etc.) |
+| `skills/` | Portable agent skills, tracked separately at [`austenstone/skills`](https://github.com/austenstone/skills), that Copilot loads on demand |
 | `hooks/` | Lifecycle hooks + `setup-hooks` installer |
 | `mcp-config.example.json` | Sanitized MCP server config. Secrets are `${ENV_VAR}` placeholders |
 
