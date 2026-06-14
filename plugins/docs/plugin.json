@@ -14,5 +14,15 @@
     "skills/pptx",
     "skills/xlsx"
   ],
-  "agents": []
+  "agents": [],
+  "mcpServers": {
+    "highcharts": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-highcharts@latest"],
+      "env": {
+        "IMAGE_EXPORT": "true"
+      }
+    }
+  }
 }

@@ -16,5 +16,30 @@
     "skills/gemini-video",
     "skills/playwright"
   ],
-  "agents": []
+  "agents": [],
+  "mcpServers": {
+    "notebooklm": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["notebooklm-mcp@latest"]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect"]
+    },
+    "playwright-headless": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless", "--isolated"]
+    },
+    "brave-search": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@brave/brave-search-mcp-server", "--transport", "stdio"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    }
+  }
 }

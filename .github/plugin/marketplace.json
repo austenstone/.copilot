@@ -10,8 +10,8 @@
   },
   "plugins": [
     {
-      "name": "copilot",
-      "description": "MCP servers from Austen Stone.",
+      "name": "all",
+      "description": "Austen Stone's personal Copilot customizations.",
       "version": "1.0.0",
       "author": {
         "name": "Austen Stone",

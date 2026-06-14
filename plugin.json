@@ -1,6 +1,6 @@
 {
-  "name": "copilot",
-  "description": "Austen Stone's personal Copilot customizations — skills, agents, and MCP servers.",
+  "name": "all",
+  "description": "Austen Stone's personal Copilot customizations — skills and agents.",
   "version": "1.0.0",
   "author": {
     "name": "Austen Stone",
@@ -9,8 +9,7 @@
   "license": "MIT",
   "repository": "https://github.com/austenstone/.copilot",
   "homepage": "https://github.com/austenstone/.copilot",
-  "keywords": ["github", "copilot", "skills", "mcp"],
+  "keywords": ["github", "copilot", "skills"],
   "skills": [],
-  "agents": [],
-  "mcpServers": ".mcp.json"
+  "agents": []
 }

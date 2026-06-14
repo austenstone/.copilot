@@ -13,5 +13,21 @@
     "skills/grill-me",
     "skills/personal-intelligence"
   ],
-  "agents": []
+  "agents": [],
+  "mcpServers": {
+    "workiq": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@microsoft/workiq@latest", "mcp"]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    }
+  }
 }
