@@ -6,9 +6,9 @@ description: "Summarize any URL, YouTube video, podcast, PDF, image, audio/video
 # Summarize
 
 - Gist of a URL, YouTube, podcast, PDF, image, audio/video, or stdin.
-- Run: `timeout 180 summarize "<input>" --cli agy --plain`
+- Run: `timeout 180 npx -y @steipete/summarize "<input>" --cli agy --plain` (or `summarize` if installed; Node 24+).
 - `--cli agy`: free, reliable default (copilot returns empty, gemini key is capped).
 - `--length short|medium|long|xl|xxl` or char count · `--lang <lang>`.
 - `--extract` text only · `--slides` video screenshots · `--json` machine output.
-- stdin: `pbpaste | summarize - --cli agy --plain`
-- Fail fast on error/empty, don't retry. Install: `npm i -g @steipete/summarize` (Node 24+).
+- stdin: `pbpaste | npx -y @steipete/summarize - --cli agy --plain`
+- Fail fast on error/empty, don't retry.
