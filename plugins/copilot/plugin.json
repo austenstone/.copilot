@@ -10,8 +10,8 @@
   "repository": "https://github.com/austenstone/.copilot",
   "keywords": ["github", "copilot", "skills", "extensions", "authoring"],
   "skills": [
-    "../../skills/write-a-skill",
-    "../../skills/write-an-extension"
+    "skills/write-a-skill",
+    "skills/write-an-extension"
   ],
   "agents": []
 }

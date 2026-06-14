@@ -10,8 +10,8 @@
   "repository": "https://github.com/austenstone/.copilot",
   "keywords": ["github"],
   "skills": [
-    "../../skills/fgpat-deeplink",
-    "../../skills/github-media"
+    "skills/fgpat-deeplink",
+    "skills/github-media"
   ],
   "agents": []
 }

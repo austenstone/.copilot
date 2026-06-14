@@ -10,8 +10,8 @@
   "repository": "https://github.com/austenstone/.copilot",
   "keywords": ["general", "productivity", "ai"],
   "skills": [
-    "../../skills/grill-me",
-    "../../skills/personal-intelligence"
+    "skills/grill-me",
+    "skills/personal-intelligence"
   ],
   "agents": []
 }

@@ -10,9 +10,9 @@
   "repository": "https://github.com/austenstone/.copilot",
   "keywords": ["docs", "docx", "xlsx", "pptx", "word", "excel", "powerpoint"],
   "skills": [
-    "../../skills/docx",
-    "../../skills/pptx",
-    "../../skills/xlsx"
+    "skills/docx",
+    "skills/pptx",
+    "skills/xlsx"
   ],
   "agents": []
 }
