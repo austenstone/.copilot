@@ -8,7 +8,7 @@ My personal GitHub Copilot customizations, synced from `~/.copilot`. Drop these 
 | --- | --- |
 | `copilot-instructions.md` | Top-level pointer to the instruction set |
 | `instructions/` | Always-on instructions (identity, personality, coding standards, web use) |
-| `skills/` | Agent skills, tracked at [austenstone/skills](https://github.com/austenstone/skills) |
+| `skills/` | Agent skills |
 | `agents/` | Custom agents |
 | `hooks/` | Lifecycle hooks + `setup-hooks` installer |
 | `plugin.json` | Copilot CLI plugin manifest |
@@ -61,6 +61,6 @@ Additional env vars for the full config:
 
 ## Notes
 
-- `skills/` is a git submodule ([austenstone/skills](https://github.com/austenstone/skills)). Use `--recurse-submodules` when cloning or the plugin install won't bundle them.
+- `skills/` lives directly in this repo as committed files.
 - The real `mcp-config.json` is gitignored. Only the sanitized example is tracked.
 - `skills/google-search/profile/` (browser session data) is excluded.
