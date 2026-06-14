@@ -10,20 +10,6 @@
   },
   "plugins": [
     {
-      "name": "all",
-      "description": "Austen Stone's personal Copilot customizations.",
-      "version": "1.0.0",
-      "author": {
-        "name": "Austen Stone",
-        "url": "https://github.com/austenstone"
-      },
-      "license": "MIT",
-      "repository": "https://github.com/austenstone/.copilot",
-      "homepage": "https://github.com/austenstone/.copilot",
-      "keywords": ["github", "copilot", "mcp"],
-      "source": "."
-    },
-    {
       "name": "google",
       "description": "Google search, Gemini AI, and browser automation skills.",
       "version": "1.0.0",
