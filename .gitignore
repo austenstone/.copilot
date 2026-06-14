@@ -1,9 +1,43 @@
+# This repo lives inside the live ~/.copilot state directory.
+# Ignore everything by default so caches, logs, DBs, browser profiles,
+# OAuth state, chat history, and local secrets never show up accidentally.
+*
+
+# Existing tracked files still report modifications normally.
+# New files must be added intentionally with `git add -f <path>`.
+!.gitignore
+!README.md
+!copilot-instructions.md
+!mcp-config.example.json
+!hooks/
+!hooks/**
+!instructions/
+!instructions/**
+!skills/
+!skills/**
+
+# Generated or sensitive skill/runtime state.
 .DS_Store
+**/.DS_Store
 node_modules/
+**/node_modules/
 *.log
+**/*.log
+__pycache__/
+**/__pycache__/
+outputs/
+**/outputs/
+profile/
+**/profile/
+skills/google-search copy/
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
 
-# Live MCP config holds secrets — only the sanitized example is tracked
+# Local config/state with secrets or machine-specific values.
 mcp-config.json
-
-# Browser/session profile data from skills
-skills/google-search/profile/
+mcp-oauth-config/
+*.bak
+*.enc
