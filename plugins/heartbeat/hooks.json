@@ -1,0 +1,8 @@
+{
+  "$schema": "https://aka.ms/vscode-copilot-hooks.schema.json",
+  "version": 1,
+  "_comment": "Heartbeat coverage gate. ONE hook, stateless: agentStop derives everything from the session transcript. Loads only when this plugin is enabled in settings.json (enabledPlugins).",
+  "hooks": {
+    "agentStop": [ { "type": "command", "command": "${COPILOT_PLUGIN_ROOT}/events/agent-stop.sh", "timeoutSec": 15 } ]
+  }
+}

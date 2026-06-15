@@ -1,0 +1,14 @@
+{
+  "name": "heartbeat",
+  "description": "Inbound-coverage gate for scheduled /heartbeat sessions. A single stateless agentStop hook reads the session transcript and forces the agent to actually CHECK every required source (Slack, Teams, Email, GitHub) before it's allowed to stop. The canonical real-world use case for Copilot hooks.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/austenstone/.copilot",
+  "keywords": ["copilot", "hooks", "heartbeat", "coverage-gate", "agentStop"],
+  "skills": [],
+  "agents": []
+}
