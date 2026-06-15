@@ -1,0 +1,12 @@
+{
+  "$schema": "https://aka.ms/vscode-copilot-hooks.schema.json",
+  "version": 1,
+  "_comment": "Heartbeat coverage gate wiring. Assumes files installed at .github/hooks/ with lib.sh + coverage.sh at the root and these event scripts under events/.",
+  "hooks": {
+    "sessionStart":       [ { "type": "command", "command": "./.github/hooks/events/session-start.sh", "timeoutSec": 10 } ],
+    "userPromptSubmitted":[ { "type": "command", "command": "./.github/hooks/events/user-prompt.sh", "timeoutSec": 10 } ],
+    "preToolUse":         [ { "type": "command", "command": "./.github/hooks/events/pre-tool.sh", "timeoutSec": 10 } ],
+    "postToolUse":        [ { "type": "command", "command": "./.github/hooks/events/post-tool.sh", "timeoutSec": 10 } ],
+    "agentStop":          [ { "type": "command", "command": "./.github/hooks/events/agent-stop.sh", "timeoutSec": 15 } ]
+  }
+}

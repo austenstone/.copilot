@@ -1,0 +1,14 @@
+{
+  "name": "copilot-hooks",
+  "description": "Reference implementation and worked examples for building clean Copilot CLI hooks. Parked here DORMANT: nothing in this plugin loads. See README to activate.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/austenstone/.copilot",
+  "keywords": ["copilot", "hooks", "reference", "examples", "heartbeat"],
+  "skills": [],
+  "agents": []
+}

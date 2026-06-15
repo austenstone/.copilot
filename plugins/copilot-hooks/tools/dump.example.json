@@ -1,0 +1,13 @@
+{
+  "$schema": "https://aka.ms/vscode-copilot-hooks.schema.json",
+  "version": 1,
+  "_comment": "Debug wiring: send EVERY event to dump.sh. Copy these entries into your real hooks.json (or run this alone) while developing, then remove. Adjust the path to wherever you place dump.sh.",
+  "hooks": {
+    "sessionStart":       [ { "type": "command", "command": "./.github/hooks/tools/dump.sh", "timeoutSec": 10 } ],
+    "userPromptSubmitted":[ { "type": "command", "command": "./.github/hooks/tools/dump.sh", "timeoutSec": 10 } ],
+    "preToolUse":         [ { "type": "command", "command": "./.github/hooks/tools/dump.sh", "timeoutSec": 10 } ],
+    "postToolUse":        [ { "type": "command", "command": "./.github/hooks/tools/dump.sh", "timeoutSec": 10 } ],
+    "postToolUseFailure": [ { "type": "command", "command": "./.github/hooks/tools/dump.sh", "timeoutSec": 10 } ],
+    "agentStop":          [ { "type": "command", "command": "./.github/hooks/tools/dump.sh", "timeoutSec": 10 } ]
+  }
+}
