@@ -12,6 +12,7 @@ applyTo: "**"
 - KISS (Keep It Simple, Stupid)
 - Comments explain WHY, not WHAT.
 - Don't reinvent the wheel. Leverage existing libraries and patterns.
+- Always install the latest version of a library. Look it up before adding.
 - npm only is favored
 - TypeScript strict mode. No `any` unless unavoidable.
 - No enums. Use `as const` objects or union types.
