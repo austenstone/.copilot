@@ -11,7 +11,6 @@
   "keywords": ["google", "gemini", "search", "playwright", "browser"],
   "skills": [
     "skills/google-search",
-    "skills/gemini-cli",
     "skills/gemini-image",
     "skills/gemini-video",
     "skills/playwright"
