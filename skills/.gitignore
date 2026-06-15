@@ -1,22 +1,6 @@
-# This repo lives inside the live ~/.copilot state directory.
-# Ignore everything by default so caches, logs, DBs, browser profiles,
-# OAuth state, chat history, and local secrets never show up accidentally.
-*
+# Skill-local noise. Root .gitignore already whitelists skills/**,
+# so new skill files are tracked by default. Only ignore generated/runtime junk.
 
-# Existing tracked files still report modifications normally.
-# New files must be added intentionally with `git add -f <path>`.
-!.gitignore
-!README.md
-!copilot-instructions.md
-!mcp-config.example.json
-!hooks/
-!hooks/**
-!instructions/
-!instructions/**
-!skills/
-!skills/**
-
-# Generated or sensitive skill/runtime state.
 .DS_Store
 **/.DS_Store
 node_modules/
@@ -29,15 +13,11 @@ outputs/
 **/outputs/
 profile/
 **/profile/
-skills/google-search copy/
+google-search copy/
 *.sqlite
 *.sqlite3
 *.db
 *.db-shm
 *.db-wal
-
-# Local config/state with secrets or machine-specific values.
-mcp-config.json
-mcp-oauth-config/
 *.bak
 *.enc
