@@ -1,4 +1,6 @@
 ---
+name: Shell Script Standards
+description: Shell script standards and best practices
 applyTo: "**/*.sh"
 ---
 

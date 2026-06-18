@@ -1,4 +1,6 @@
 ---
+name: GitHub Actions Workflow Standards
+description: GitHub Actions workflow standards and best practices
 applyTo: ".github/workflows/**/*.{yml,yaml}"
 ---
 

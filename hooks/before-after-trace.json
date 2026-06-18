@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "bun /Users/austenstone/.copilot/hooks/before-after-trace/trace.js",
+        "timeoutSec": 5
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "bun /Users/austenstone/.copilot/hooks/before-after-trace/trace.js",
+        "timeoutSec": 5
+      }
+    ]
+  }
+}

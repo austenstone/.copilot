@@ -1,4 +1,5 @@
 ---
+name: Global Copilot Instructions
 description: Global copilot instructions
 # applyTo: 'Global copilot instructions' # when provided, instructions will automatically be added to the request context when the pattern matches an attached file
 ---

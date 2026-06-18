@@ -34,7 +34,7 @@ the real likely-causes playbook so the agent asks for an alternative source or s
 ## Wiring
 
 ### VS Code
-`~/.github/hooks/m365-403-explainer.json` registers `explain.sh` for `PostToolUse`
+`~/.copilot/hooks/m365-403-explainer.json` registers `explain.sh` for `PostToolUse`
 (the location listed in `chat.hookFilesLocations`).
 
 ### Copilot CLI

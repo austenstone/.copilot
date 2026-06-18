@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "/Users/austenstone/.copilot/hooks/m365-403-explainer/explain.sh",
+        "timeout": 5
+      }
+    ]
+  }
+}

@@ -11,7 +11,7 @@
 # `additionalContext` that tells the agent the real likely causes so it stops
 # retrying and either skips the step or asks the user for an alternative.
 #
-# Wired by ~/.github/hooks/m365-403-explainer.json. Safe to run on every
+# Wired by ~/.copilot/hooks/m365-403-explainer.json. Safe to run on every
 # PostToolUse — exits 0 silently for anything that doesn't match.
 #
 # Input shape handled (covers VS Code Copilot Chat + Copilot CLI):
