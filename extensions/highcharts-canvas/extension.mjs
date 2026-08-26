@@ -41,6 +41,26 @@ async function startServer() {
 				req.on("close", () => subscribers.delete(res));
 				return;
 			}
+			if (req.method === "GET" && req.url.startsWith("/vendor/")) {
+				const name = req.url.slice("/vendor/".length);
+				if (!/^[\w.@-]+$/.test(name)) {
+					res.writeHead(400);
+					res.end();
+					return;
+				}
+				try {
+					const asset = await readFile(join(__dirname, "vendor", name));
+					res.writeHead(200, {
+						"Content-Type": name.endsWith(".css") ? "text/css; charset=utf-8" : "text/javascript; charset=utf-8",
+						"Cache-Control": "public, max-age=31536000, immutable",
+					});
+					res.end(asset);
+				} catch {
+					res.writeHead(404);
+					res.end();
+				}
+				return;
+			}
 			res.writeHead(404);
 			res.end();
 		} catch (err) {

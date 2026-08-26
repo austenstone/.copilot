@@ -51,3 +51,13 @@ mcp-config.json
 mcp-oauth-config/
 *.bak
 *.enc
+
+# --- Public-repo safety: never commit these ---
+# Chrome profile: contains "Login Data", "Trust Tokens" (credential storage).
+skills/google-search/profile-*/
+# Highcharts is commercially licensed (c) Highsoft AS — do not redistribute.
+# Regenerate with extensions/highcharts-canvas/fetch-vendor.sh
+extensions/highcharts-canvas/vendor/
+extensions/highcharts-canvas/state/
+# Local scratch hook configs.
+hooks/*.disabled

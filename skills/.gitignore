@@ -1,6 +1,24 @@
 # Skill-local noise. Root .gitignore already whitelists skills/**,
 # so new skill files are tracked by default. Only ignore generated/runtime junk.
 
+# Internal-only skills vendored from a private GitHub org repo.
+# This repo is PUBLIC — these reference internal services, endpoints,
+# and monorepo CI details. Never `git add -f` these.
+chatops/
+copilot-usage-stats/
+forma/
+my-prs-status/
+request-jit/
+thehub-docs-search/
+watch-ci/
+
+# Field/sales skills — live in github/austenstone-notes (private), not here.
+actions-dispatch/
+actions-wbr/
+fabric-cli-core
+fabric-cli-powerbi
+fabric-dashboards
+
 .DS_Store
 **/.DS_Store
 node_modules/
@@ -21,3 +39,6 @@ google-search copy/
 *.db-wal
 *.bak
 *.enc
+
+# Real Slack samples — internal business content, local only.
+write/VOICE.md

@@ -1,6 +1,6 @@
 ---
 name: tui-use
-description: Drive interactive terminal programs that expect a human at the keyboard — REPLs (python, node), debuggers (pdb, gdb), and full-screen TUI apps (vim, lazygit, htop, fzf). Use when a program waits for keystrokes, a debugger hits a breakpoint, or a full-screen TUI renders a menu and raw terminal output is unreadable. Triggers: REPL, debugger, pdb, gdb, breakpoint, vim, lazygit, htop, fzf, interactive prompt, TUI.
+description: "Drive interactive terminal programs that expect a human at the keyboard — REPLs (python, node), debuggers (pdb, gdb), and full-screen TUI apps (vim, lazygit, htop, fzf). Use when a program waits for keystrokes, a debugger hits a breakpoint, or a full-screen TUI renders a menu and raw terminal output is unreadable. Triggers: REPL, debugger, pdb, gdb, breakpoint, vim, lazygit, htop, fzf, interactive prompt, TUI."
 ---
 
 # tui-use

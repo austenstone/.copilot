@@ -1,6 +1,6 @@
 ---
 name: mac-maintenance
-description: Mac upkeep routine: brew update/upgrade, pull clean git repos under ~/source, check global npm packages with npm-check-updates, empty Trash. Use when Austen asks for "mac maintenance", "cleanup", "update my mac", "refresh repos", "brew update", "ncu", "outdated npm packages", or any periodic housekeeping on the machine.
+description: "Mac upkeep routine: brew update/upgrade, pull clean git repos under ~/source, check global npm packages with npm-check-updates, prune MCP OAuth credentials (file cache + macOS Keychain), empty Trash. Use when Austen asks for \"mac maintenance\", \"cleanup\", \"update my mac\", \"refresh repos\", \"brew update\", \"ncu\", \"outdated npm packages\", \"oauth cache\", or any periodic housekeeping on the machine."
 ---
 
 # Mac Maintenance
@@ -83,7 +83,28 @@ npx -y npm-check-updates -g
 Surface the suggested `npm -g install ...` command. Don't run it automatically --
 global package upgrades can break tooling. Ask before applying.
 
-4. Empty Trash:
+4. Prune MCP OAuth credentials. Both clients rotate the opaque cache key for a
+   server over time and never clean up, so garbage accumulates in *two* places:
+   `~/.copilot/mcp-oauth-config` (CLI, ~13 files/day) and the macOS Keychain
+   under service `copilot-mcp-oauth` (github-app, ~24-47 items/day). Dry run
+   first, then apply:
+
+```bash
+D="${MCP_OAUTH_DOCTOR:?set to your mcp-oauth-doctor.py path}"
+python3 "$D"                          # health report
+python3 "$D" prune --apply            # dead files (tarball backup first)
+python3 "$D" prune-keychain --apply   # orphaned Keychain items (no undo)
+```
+
+Both only remove credentials with **no client registration on disk**, which no
+code path can look up again, so re-auth is never triggered. `prune` tarballs the
+cache first; `prune-keychain` can't back up, so it writes the key list to
+`~/.copilot/keychain-orphans.<timestamp>.txt` instead.
+
+If the report shows `[??]` stale entries or key rotation, that's the full
+`mcp-oauth` skill's territory — see its SKILL.md.
+
+5. Empty Trash:
 
 ```bash
 osascript -e 'tell application "Finder" to empty trash'
@@ -113,4 +134,5 @@ Terse counts only:
 - brew: upgraded count / already current / any deprecated or untrusted-tap notes
 - repos: pulled / skipped (dirty) / failed (list failed paths)
 - npm globals: outdated count (list packages behind, ask before upgrading)
+- oauth: files pruned / keychain items pruned / live credentials kept
 - trash: emptied / failed

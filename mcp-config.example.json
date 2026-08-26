@@ -8,7 +8,7 @@
         "github"
       ],
       "type": "http",
-      "url": "https://revenue-mcp-server.githubapp.com/mcp"
+      "url": "${REVENUE_MCP_URL}"
     },
     "workiq": {
       "tools": [
@@ -78,9 +78,9 @@
         "microsoft-fabric-rti-mcp"
       ],
       "env": {
-        "KUSTO_SERVICE_URI": "https://gh-analytics.eastus.kusto.windows.net/",
-        "KUSTO_SERVICE_DEFAULT_DB": "snapshots",
-        "KUSTO_KNOWN_SERVICES": "[{\"service_uri\":\"https://gh-analytics.eastus.kusto.windows.net/\",\"default_database\":\"snapshots\",\"description\":\"GitHub Analytics (snapshots, hydro, c360, canonical, zendesk)\"},{\"service_uri\":\"https://githubactions.eastus2.kusto.windows.net/\",\"default_database\":\"Actions\",\"description\":\"Actions Proxima (East US 2 / Dotcom)\"},{\"service_uri\":\"https://githubactionsprox.westeurope.kusto.windows.net/\",\"default_database\":\"Actions\",\"description\":\"Actions Proxima (West Europe)\"},{\"service_uri\":\"https://githubactionsproxeau.australiaeast.kusto.windows.net/\",\"default_database\":\"Actions\",\"description\":\"Actions Proxima (Australia East)\"},{\"service_uri\":\"https://ghdwprod.eastus.kusto.windows.net/\",\"default_database\":\"hydro\",\"description\":\"GitHub DW - Dotcom (East US)\"}]"
+        "KUSTO_SERVICE_URI": "${KUSTO_SERVICE_URI}",
+        "KUSTO_SERVICE_DEFAULT_DB": "${KUSTO_SERVICE_DEFAULT_DB}",
+        "KUSTO_KNOWN_SERVICES": "${KUSTO_KNOWN_SERVICES}"
       }
     },
     "highcharts": {
@@ -130,28 +130,28 @@
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_CalendarTools"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_CalendarTools"
     },
     "m365-mail": {
       "tools": [
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_MailTools"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_MailTools"
     },
     "m365-copilot-chat": {
       "tools": [
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_M365Copilot"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_M365Copilot"
     },
     "m365-user": {
       "tools": [
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_MeServer"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_MeServer"
     },
     "m365-teams": {
       "tools": [
@@ -167,35 +167,35 @@
         "GetRichMessageFormats"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_TeamsServer"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_TeamsServer"
     },
     "m365-word": {
       "tools": [
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_WordServer"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_WordServer"
     },
     "m365-onedrive": {
       "tools": [
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_OneDriveRemoteServer"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_OneDriveRemoteServer"
     },
     "m365-sharepoint": {
       "tools": [
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_SharePointRemoteServer"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_SharePointRemoteServer"
     },
     "m365-admin": {
       "tools": [
         "*"
       ],
       "type": "http",
-      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/398a6654-997b-47e9-b12b-9515b896b4de/servers/mcp_AdminTools"
+      "url": "https://agent365.svc.cloud.microsoft/agents/tenants/${M365_TENANT_ID}/servers/mcp_AdminTools"
     },
     "microsoft-learn": {
       "tools": [
@@ -209,7 +209,7 @@
         "*"
       ],
       "type": "http",
-      "url": "https://mcp.seismic.com/v1/tenants/github",
+      "url": "https://mcp.seismic.com/v1/tenants/${SEISMIC_TENANT}",
       "oauthClientId": "94e8e80a-75c9-4992-bca7-8c19678b79fa",
       "oauthPublicClient": true
     },

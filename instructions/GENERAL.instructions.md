@@ -16,6 +16,7 @@ description: Global copilot instructions
 - Commit early and often. Small, frequent commits beat one giant batch
 
 - LINK EVERYTHING! I want clickable links for everything
+- In-repo markdown links must be relative (`../../docs/X.md`), never absolute github.com URLs. GitHub resolves `../` fine, and relative links survive forks, renames, and local preview
 
 - When interacting with GitHub use GitHub MCP tools over fetch
 
