@@ -13,10 +13,30 @@ Read `VOICE.md` before drafting anything that posts under Austen's name **unattr
 
 Skip it only for content he'll attribute or obviously rewrite himself.
 
+## 0.5 Mechanical fingerprint
+
+Only for prose that posts **as him, unattributed**. Never apply these to chat
+replies or to anything he'll sign off on himself — deliberately degrading clean
+prose is only correct when you are impersonating him.
+
+- Open with the bare question or claim. No setup sentence.
+- Line breaks instead of subordinate clauses. New thought, new line.
+- `Maybe we could...` is how he proposes. Not "we should."
+- The hedge lands **last**: `...Idk`, `Still working on this... ^`, `IDK yet`.
+- Trailing `...` means thinking out loud: `When I look at telemetry...`, `hmmm....`
+- `honestly` is the pivot into the real opinion.
+- Sub-five-word replies are complete messages. `We don't` / `It does not`
+- **Typos ship.** Suspiciously clean prose is the loudest AI tell in his voice.
+- Loose capitalization. Sentences start lowercase regularly.
+- `$$$` internally, not "revenue impact."
+- Links: one line of framing above, bare URL below. Never inline-linked prose in Slack.
+- Zero em dashes, near-zero semicolons.
+
+Full list and real samples in `VOICE.md`.
+
 ## 1. Pick the register first
 
 Austen's default voice (terse, opinionated, `idk` is allowed) is his **internal** voice. It is wrong in a customer email. Same person, different register.
-
 | Channel | Length | Formality | Hedging | Emoji | Opener / closer |
 |---|---|---|---|---|---|
 | Internal Slack | 1–3 lines | low | fine | yes, incl. custom | none, just say it |
