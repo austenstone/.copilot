@@ -1,157 +1,98 @@
 # Inventory and classification
 
-Use this after loading [`../../actions-workflow-toolkit/SKILL.md`](../../actions-workflow-toolkit/SKILL.md). The toolkit owns workflow discovery basics, validation, safety, and canonical docs links.
+Load the toolkit and its [helper contract](../../actions-workflow-toolkit/references/helper-contract.md) first.
+The inventory helper uses the repository's existing PyYAML ecosystem with an
+Actions-safe loader. If PyYAML is unavailable, it returns structured
+`missing_dependency` evidence; do not install dependencies during a review.
 
-## Local repo inventory
+## Bounded inventory
 
-```bash
-find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) -print | sort
-```
-
-Summarize shape without reading every line manually:
-
-```bash
-for f in .github/workflows/*.{yml,yaml}; do
-  [ -e "$f" ] || continue
-  printf '%s\t%s lines\t%s jobs\n' \
-    "$f" \
-    "$(wc -l < "$f" | tr -d ' ')" \
-    "$(yq -r '.jobs // {} | keys | length' "$f")"
-done
-```
-
-Pull high-signal fields into a table:
+Repository:
 
 ```bash
-find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) -print | sort |
-while read -r f; do
-  f="$f" yq -r '
-    [strenv(f),
-     ((.on // "" | tostring) | split("\n") | join(" ")),
-     ((.permissions // "" | tostring) | split("\n") | join(" ")),
-     (.jobs // {} | keys | join(","))] | @tsv
-  ' "$f"
-done
+python3 ../actions-workflow-toolkit/scripts/inventory-workflows.py \
+  --repository OWNER/REPO \
+  --max-workflows 100 \
+  --max-depth 3 \
+  --max-callees 100 \
+  --max-comparisons 5000 \
+  --pretty
 ```
 
-## Org inventory, clone-free
+Use `--ref REF` only when the requested evidence is at that ref. It is provenance, not proof that runs executed that definition.
 
-Fast path through code search:
+Organization:
 
 ```bash
-for ext in yml yaml; do
-  gh api --paginate \
-    "search/code?q=org:ORG+path:.github/workflows+extension:$ext" \
-    --jq '.items[] | [.repository.full_name, .path, .html_url] | @tsv'
-done
+python3 ../actions-workflow-toolkit/scripts/inventory-workflows.py \
+  --organization ORG \
+  --max-repositories 200 \
+  --max-workflows 1000 \
+  --max-depth 3 \
+  --max-callees 500 \
+  --max-comparisons 20000 \
+  --pretty
 ```
 
-Be honest about the search API: it is capped, can miss generated or uncommon extensions, and is not a complete estate inventory for large orgs. Use it to start, not to prove absence.
-
-Fallback that lists repos, then fetches workflow directory contents:
+Manifest:
 
 ```bash
-gh repo list ORG --limit 1000 --json nameWithOwner,isArchived \
-  --jq '.[] | select(.isArchived == false) | .nameWithOwner' |
-while read -r repo; do
-  contents=$(gh api "repos/$repo/contents/.github/workflows" 2>/dev/null) || continue
-  jq -r --arg repo "$repo" '
-    .[]? | select(.name | test("\\.(ya?ml)$")) |
-    [$repo, .name, .download_url] | @tsv
-  ' <<<"$contents"
-done
+python3 ../actions-workflow-toolkit/scripts/inventory-workflows.py \
+  --input repositories.json \
+  --max-repositories 50 \
+  --max-workflows 500 \
+  --pretty
 ```
 
-Fetch one workflow without cloning:
+The manifest is a JSON array, `{"repositories": [...]}`, or one `OWNER/REPO[@REF]` per line. Bounds are examples, not defaults to copy blindly. Pick the smallest defensible scope.
 
-```bash
-gh api repos/OWNER/REPO/contents/.github/workflows/ci.yml --jq '.content' | base64 -d
-```
+## Read coverage before findings
 
-## Duplication detection for sprawl
+| Evidence | Interpretation |
+|---|---|
+| `coverage.status: complete` | The requested bounded collection completed. It is not proof about callers outside scope. |
+| `partial` | Use collected evidence, but repeat every material limitation in the conclusion. |
+| `unavailable` | Do not make an architecture claim from the inventory. |
+| `rate_limited` | Collection stopped or degraded because GitHub throttled it. |
+| `forbidden_or_rate_limited` | A `403` cannot safely distinguish policy, authorization, or unreported throttling. |
+| `not_found_or_inaccessible` | A `404` cannot safely distinguish absence from hidden content. |
+| caller coverage `scoped` or `limited` | Incoming edges are only calls found in examined workflow files. |
 
-Hash normalized job bodies. Keep the normalization boring: remove labels that legitimately vary, then compare actual job definitions.
+The helper follows reusable calls transitively within all supplied bounds. Each remote edge reports whether its own ref is a full commit SHA. For local `./.github/workflows/...` calls, it resolves one immutable repository SHA and uses it for caller and callee reads. If that resolution is unavailable, the local edge is explicitly unverified and unpinned. An inaccessible callee is evidence of incomplete contract review, not evidence that the callee does not exist.
 
-```bash
-find estate-workflows -type f \( -name '*.yml' -o -name '*.yaml' \) -print |
-while read -r f; do
-  yq -o=json '.jobs // {}' "$f" |
-  jq -c --arg file "$f" '
-    to_entries[] |
-    {
-      file: $file,
-      job: .key,
-      hash: (.value
-        | del(.name, .environment.name, .concurrency.group)
-        | tostring
-        | @base64)
-    }
-  '
-done |
-jq -r '[.hash, .file, .job] | @tsv' |
-sort |
-awk -F '\t' 'seen[$1]++ {print prev[$1] "\n" $0 "\n"} {prev[$1]=$0}'
-```
+## Review candidate families
 
-If you cannot materialize files locally, fetch each workflow with `gh api`, write the contents under the current repo workspace, then run the same comparison. Do not use `/tmp`.
+Use exact canonical groups first. For similarity pairs, inspect the original jobs and compare:
 
-## Classifier heuristics
+- trigger, condition, matrix, dependencies, runner, services, container, and timeout;
+- string or object `environment` and `concurrency`;
+- permissions and secret flow;
+- inputs, outputs, artifacts, caches, and side effects;
+- action and reusable-workflow refs.
 
-### A. The monolith
+Similarity means “worth comparing.” Never say two jobs are equivalent because their score is high.
 
-Signals:
+## Classification
 
-- One workflow is obviously larger than the others.
-- A workflow crosses the 500-line heuristic, especially if most jobs are serial.
-- Job names mirror old stages: `checkout`, `build`, `unit`, `integration`, `package`, `deploy`, `promote`.
-- Long linear `needs:` chain where jobs could run independently.
-- Broad triggers with no path selection.
-- Shell scripts perform native Actions tasks such as setup, cache restore, artifact upload, deployment auth, or release creation.
+| State | Required evidence | Defensible response |
+|---|---|---|
+| `healthy` | Complete enough scoped inventory; distinct workflows; clear ownership; tolerable cost; no unsafe contract drift | Leave it alone. |
+| `monolith` | One workflow crosses real ownership or dependency boundaries; long accidental sequencing or rebuilds dominate | Split one proven seam. |
+| `sprawl` | Repeated job contracts create coordinated patch, audit, runner, or credential work across consumers | Extract one high-consequence shared contract. |
+| `monorepo-blast-radius` | Unaffected services run broadly, or required-check design prevents selective execution | Add detection plus a stable required check. |
+| `mixed` | Two shapes have independent, material consequences | Name both, but choose one first decision. |
+| `inconclusive` | Bounds, rate limits, inaccessible workflows/callees, or unknown required checks block a safe conclusion | Request the smallest additional bounded evidence. |
 
-Commands:
+File length, duplication, or scanner counts alone do not decide the state.
 
-```bash
-wc -l .github/workflows/*.{yml,yaml} 2>/dev/null | sort -n
-wc -l .github/workflows/*.{yml,yaml} 2>/dev/null | awk '$1 > 500'
-rg -n 'needs:|Jenkins|jenkins|gitlab|azure-pipelines|circleci|stage|pipeline' .github/workflows
-rg -n 'npm install|pip install|curl .*release|tar -czf|aws configure|az login' .github/workflows scripts
-```
+## Decision evidence record
 
-Read the `needs:` graph. The problem is artificial sequencing, not file length by itself.
+For the one recommended decision, record:
 
-### B. Ungoverned sprawl
-
-Signals:
-
-- Similar jobs across repos with different action versions.
-- Every repo owns its own deploy workflow.
-- Permissions, OIDC, environment names, and runner labels vary without policy.
-- No central reusable workflows, or shared workflows are consumed from branches with no version contract.
-
-Commands:
-
-```bash
-rg -n 'uses: .*/\.github/workflows/.*@' estate-workflows
-rg -n 'uses: actions/(checkout|setup-node|setup-python|cache)@' estate-workflows | sort
-rg -n '^\s*permissions:|^\s*environment:|runs-on:' estate-workflows
-```
-
-The finding is not "duplication exists." The finding is operational consequence: fixes, audit changes, and runner migrations require many coordinated PRs.
-
-### C. Monorepo running everything
-
-Signals:
-
-- Many top-level services/packages but workflows trigger broadly.
-- Full test/build/deploy matrices run on every `pull_request`.
-- Required checks are skipped by path filters and block merges, or path filters were avoided because of that deadlock.
-- Merge queue exists but workflows do not handle `merge_group`.
-
-Commands:
-
-```bash
-find . -maxdepth 2 -type f \( -name package.json -o -name pom.xml -o -name pyproject.toml -o -name go.mod \) -print | sort
-rg -n '^on:|pull_request|paths:|paths-ignore:|merge_group|fromJSON|matrix:' .github/workflows
-```
-
-Design around required checks before adding path filters. A skipped required check is not a successful check; that is an architecture constraint, not a linter warning.
+1. workflows, jobs, and reusable edges supporting it;
+2. exact versus similarity-only evidence;
+3. known callers and caller-coverage limitations;
+4. transitive input, secret, output, permission, environment, concurrency, runner, and ref contracts;
+5. required checks, `merge_group`, and ruleset impact;
+6. inaccessible consumers or callees;
+7. canary cohort, rollback signal, and next expansion gate.

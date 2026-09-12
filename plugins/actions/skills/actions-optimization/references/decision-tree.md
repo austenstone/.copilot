@@ -9,11 +9,16 @@ Before diagnosing a caller, follow every `jobs.<id>.uses` edge transitively. Rec
 - If the slow or expensive behavior is owned by a reusable workflow, fix and canary the callee rather than duplicating caller-side workarounds.
 - If many callers inherit the same behavior, treat the rollout as an architecture change with a canary cohort and rollback ref.
 - If separate workflow families do not share a callee or action wrapper, they can be analyzed in parallel with non-overlapping file/repository ownership.
-- If ownership is unclear or a ref cannot be read, label the analysis partial instead of attributing the cost to the visible caller.
+- If ownership is unclear or a ref cannot be read, label configuration and behavior analysis partial. Reusable-workflow usage is billed to the caller, but the unreadable callee still prevents a complete explanation of why the cost occurred.
+- Before trigger, job-name, or matrix changes, record required check contexts and the supported OS/architecture/runtime matrix. If either is inaccessible, keep the proposed change conditional.
 
 ## 1. Queue time branch
 
 **Conclusion:** high queue time is capacity or concurrency pressure. It is not evidence that the workflow body is slow. The dashboard source is listed in [`docs-map.md#measurement-and-troubleshooting`](../../actions-workflow-toolkit/references/docs-map.md#measurement-and-troubleshooting).
+
+Use the dashboard's queue metric or correlated per-job waiting evidence. A run's
+`created_at` to `run_started_at` elapsed is not runner queue time and must not be
+used to infer capacity, especially for rerun attempts.
 
 Ask:
 
@@ -68,15 +73,18 @@ Recommended levers:
 
 | Evidence | Lever | Guardrail |
 |---|---|---|
-| Docs-only changes run full CI | Add `paths`/`paths-ignore` or a change-detection job | Required checks need a success-reporting companion workflow if filtered out |
+| Docs-only changes run full CI | Prefer an always-created workflow with internal change detection | Use the canonical stable gate so skip is accepted only when detection explicitly proves no work |
 | Monorepo package builds all packages | Generate a dynamic matrix with changed packages | Keep global integration tests if they protect shared contracts |
 | Heavy workflow runs on every push and PR | Narrow triggers or add concurrency | Do not skip default branch validation |
 
 Trigger and path syntax live in [`docs-map.md#syntax-and-semantics`](../../actions-workflow-toolkit/references/docs-map.md#syntax-and-semantics).
+Required-check handling, including merge queue, empty matrices, failure,
+cancellation, and legitimate no-work paths, lives in
+[`required-checks-and-events.md`](../../actions-workflow-toolkit/references/required-checks-and-events.md).
 
 ## 4. Runtime branch
 
-Use `/jobs` step timings from the toolkit to find the critical path. Then map the slow step to one lever.
+Use selected-attempt `/jobs` step timings from the toolkit to find the slow area. The API does not expose the `needs` graph, so its earliest-start/latest-completion span is a wall-clock proxy rather than a reconstructed dependency critical path. Then map the slow step to one lever.
 
 | Slow area | First lever | Second lever |
 |---|---|---|

@@ -1,0 +1,434 @@
+{
+  "schemaVersion": "actions-eval-corpus/v1",
+  "cases": [
+    {
+      "id": "current-yaml-differs-from-execution",
+      "title": "Current YAML differs from execution evidence",
+      "skills": ["actions-workflow-toolkit"],
+      "prompt": "Analyze run 410 attempt 2 and explain the relationship between the available workflow and execution evidence.",
+      "evidenceIds": ["CURRENT_WORKFLOW", "RUN_ATTEMPT_2", "ATTEMPT_2_LOG"],
+      "fixture": {
+        "files": {
+          ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 30\n    steps:\n      - run: npm test\n",
+          "CASE.md": "Run 410 attempt 2 was created from commit aaaaaaa. The checked-out workflow is from commit bbbbbbb and changed timeout-minutes from 10 to 30.\n"
+        },
+        "ghRules": [
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/410/attempts/2"],
+            "stdout": "{\"id\":410,\"run_attempt\":2,\"head_sha\":\"aaaaaaa\",\"conclusion\":\"failure\"}"
+          },
+          {
+            "argv": ["run", "view", "410", "--attempt", "2", "--repo", "octo/synthetic", "--log-failed"],
+            "stdout": "test\\tExecute tests\\tProcess completed with exit code 1 after 9 minutes."
+          }
+        ]
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["EXECUTED_DEFINITION_NOT_PROVEN_BY_CURRENT_YAML", "ATTEMPT_2_TEST_FAILURE"],
+          "claims": ["CURRENT_YAML_DIFFERS_FROM_RUN_EVIDENCE"],
+          "evidence": ["CURRENT_WORKFLOW", "RUN_ATTEMPT_2", "ATTEMPT_2_LOG"],
+          "abstentions": ["DO_NOT_ATTRIBUTE_FAILURE_TO_CURRENT_YAML"]
+        },
+        "mustNot": {
+          "claims": ["CURRENT_YAML_CAUSED_FAILURE", "EDIT_CURRENT_YAML_IMMEDIATELY"]
+        },
+        "allowedClaims": ["EXECUTED_DEFINITION_NOT_PROVEN_BY_CURRENT_YAML", "ATTEMPT_2_TEST_FAILURE", "CURRENT_YAML_DIFFERS_FROM_RUN_EVIDENCE"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["EXECUTED_DEFINITION_NOT_PROVEN_BY_CURRENT_YAML"]
+        }
+      }
+    },
+    {
+      "id": "failure-only-earlier-attempt",
+      "title": "Failure exists only in an earlier attempt",
+      "skills": ["actions-workflow-toolkit"],
+      "prompt": "Assess the current state and history of run 420.",
+      "evidenceIds": ["RUN_SUMMARY", "ATTEMPT_1", "ATTEMPT_2"],
+      "fixture": {
+        "files": {
+          ".github/workflows/ci.yml": "name: CI\non: pull_request\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm test\n",
+          "CASE.md": "Run 420 has two attempts. The rerun succeeded.\n"
+        },
+        "ghRules": [
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/420"],
+            "stdout": "{\"id\":420,\"run_attempt\":2,\"status\":\"completed\",\"conclusion\":\"success\"}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/420/attempts/1"],
+            "stdout": "{\"id\":420,\"run_attempt\":1,\"conclusion\":\"failure\"}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/420/attempts/2"],
+            "stdout": "{\"id\":420,\"run_attempt\":2,\"conclusion\":\"success\"}"
+          }
+        ]
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["FAILURE_ONLY_ATTEMPT_1", "LATEST_ATTEMPT_HEALTHY"],
+          "claims": ["NO_CURRENT_FAILURE"],
+          "evidence": ["RUN_SUMMARY", "ATTEMPT_1", "ATTEMPT_2"],
+          "abstentions": ["DO_NOT_REPORT_STALE_FAILURE_AS_CURRENT"]
+        },
+        "mustNot": {
+          "claims": ["LATEST_ATTEMPT_FAILED", "RUN_CURRENTLY_BROKEN"]
+        },
+        "allowedClaims": ["FAILURE_ONLY_ATTEMPT_1", "LATEST_ATTEMPT_HEALTHY", "NO_CURRENT_FAILURE"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["NO_CURRENT_FAILURE"]
+        }
+      }
+    },
+    {
+      "id": "approval-wait-vs-runner-queue",
+      "title": "Deployment approval wait is not runner queue time",
+      "skills": ["actions-optimization"],
+      "prompt": "Explain why the deploy job is waiting and recommend any warranted action.",
+      "evidenceIds": ["DEPLOY_JOB", "PENDING_DEPLOYMENT", "WORKFLOW"],
+      "fixture": {
+        "files": {
+          ".github/workflows/deploy.yml": "name: Deploy\non: workflow_dispatch\njobs:\n  deploy:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: ./deploy.sh\n",
+          "CASE.md": "The production environment requires reviewer approval.\n"
+        },
+        "ghRules": [
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/jobs/4301"],
+            "stdout": "{\"id\":4301,\"status\":\"waiting\",\"runner_id\":null,\"started_at\":null}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/430/pending_deployments"],
+            "stdout": "[{\"environment\":{\"name\":\"production\"},\"wait_timer\":0,\"current_user_can_approve\":false}]"
+          }
+        ]
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["APPROVAL_WAIT_NOT_RUNNER_QUEUE"],
+          "claims": ["RUNNER_CAPACITY_NOT_IMPLICATED"],
+          "evidence": ["DEPLOY_JOB", "PENDING_DEPLOYMENT", "WORKFLOW"],
+          "abstentions": ["DO_NOT_RECOMMEND_MORE_RUNNERS"]
+        },
+        "mustNot": {
+          "claims": ["RUNNER_QUEUE_BOTTLENECK", "BUY_MORE_RUNNERS"]
+        },
+        "allowedClaims": ["APPROVAL_WAIT_NOT_RUNNER_QUEUE", "RUNNER_CAPACITY_NOT_IMPLICATED"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["RUNNER_CAPACITY_NOT_IMPLICATED"]
+        }
+      }
+    },
+    {
+      "id": "missing-skipped-required-context",
+      "title": "Required context is missing and a job was skipped",
+      "skills": ["actions-workflow-toolkit"],
+      "prompt": "Assess the publish job outcome and the overall run result.",
+      "evidenceIds": ["WORKFLOW", "RUN_JOBS", "EVENT_PAYLOAD"],
+      "fixture": {
+        "files": {
+          ".github/workflows/publish.yml": "name: Publish\non: workflow_dispatch\njobs:\n  publish:\n    if: ${{ inputs.release_tag != '' }}\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo publish\n",
+          "event.json": "{\"inputs\":{}}\n"
+        },
+        "ghRules": [
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/440/jobs"],
+            "stdout": "{\"total_count\":1,\"jobs\":[{\"name\":\"publish\",\"status\":\"completed\",\"conclusion\":\"skipped\"}]}"
+          }
+        ]
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["REQUIRED_CONTEXT_MISSING", "PUBLISH_JOB_SKIPPED"],
+          "claims": ["SKIP_DOES_NOT_PROVE_PUBLISH_HEALTHY"],
+          "evidence": ["WORKFLOW", "RUN_JOBS", "EVENT_PAYLOAD"],
+          "abstentions": ["DO_NOT_TREAT_SKIPPED_AS_SUCCESS"]
+        },
+        "mustNot": {
+          "claims": ["PUBLISH_SUCCEEDED", "WORKFLOW_FULLY_VALIDATED"]
+        },
+        "allowedClaims": ["REQUIRED_CONTEXT_MISSING", "PUBLISH_JOB_SKIPPED", "SKIP_DOES_NOT_PROVE_PUBLISH_HEALTHY"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["SKIP_DOES_NOT_PROVE_PUBLISH_HEALTHY"]
+        }
+      }
+    },
+    {
+      "id": "safe-metadata-only-privileged-workflow",
+      "title": "Metadata-only privileged workflow is guarded",
+      "skills": ["actions-security-review"],
+      "prompt": "Review the security posture of the pull_request_target workflow.",
+      "evidenceIds": ["WORKFLOW", "ACTION_PIN"],
+      "fixture": {
+        "files": {
+          ".github/workflows/label.yml": "name: Label\non:\n  pull_request_target:\n    types: [opened]\npermissions:\n  contents: read\n  pull-requests: write\njobs:\n  label:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea\n        with:\n          script: |\n            await github.rest.issues.addLabels({ ...context.repo, issue_number: context.issue.number, labels: ['triage'] })\n",
+          "CASE.md": "The workflow does not check out or execute pull-request content. The action reference is a synthetic full commit SHA.\n"
+        },
+        "ghRules": []
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["PRIVILEGED_TRIGGER_METADATA_ONLY"],
+          "claims": ["NO_UNTRUSTED_CODE_EXECUTION", "CURRENT_GUARDS_ARE_APPROPRIATE"],
+          "evidence": ["WORKFLOW", "ACTION_PIN"],
+          "abstentions": ["DO_NOT_FLAG_TRIGGER_NAME_ALONE"]
+        },
+        "mustNot": {
+          "claims": ["UNTRUSTED_CODE_EXECUTION", "REPLACE_PULL_REQUEST_TARGET"]
+        },
+        "allowedClaims": ["PRIVILEGED_TRIGGER_METADATA_ONLY", "NO_UNTRUSTED_CODE_EXECUTION", "CURRENT_GUARDS_ARE_APPROPRIATE"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["CURRENT_GUARDS_ARE_APPROPRIATE"]
+        }
+      }
+    },
+    {
+      "id": "scanner-hard-failure",
+      "title": "Scanner hard failure is not a clean scan",
+      "skills": ["actions-security-review"],
+      "prompt": "Interpret the scanner result and recommend next steps.",
+      "evidenceIds": ["SCANNER_ENVELOPE", "SCANNER_EXIT"],
+      "fixture": {
+        "files": {
+          ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo ok\n",
+          "scanner-result.json": "{\"schema_version\":\"actions-helper/v1\",\"tool\":\"scan-workflows\",\"coverage\":{\"status\":\"unavailable\",\"requested\":1,\"examined\":0,\"limitations\":[\"scanner crashed\"]},\"result\":{},\"diagnostics\":[{\"level\":\"error\",\"code\":\"tool_crash\",\"message\":\"synthetic parser crash\"}]}\n",
+          "CASE.md": "The scanner exited 5.\n"
+        },
+        "ghRules": []
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["SCANNER_HARD_FAILURE", "COVERAGE_UNAVAILABLE"],
+          "claims": ["SCAN_NOT_CLEAN", "REVIEW_INCOMPLETE"],
+          "evidence": ["SCANNER_ENVELOPE", "SCANNER_EXIT"],
+          "abstentions": ["DO_NOT_REPORT_NO_FINDINGS"]
+        },
+        "mustNot": {
+          "claims": ["NO_FINDINGS", "WORKFLOWS_SECURE"]
+        },
+        "allowedClaims": ["SCANNER_HARD_FAILURE", "COVERAGE_UNAVAILABLE", "SCAN_NOT_CLEAN", "REVIEW_INCOMPLETE"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["REVIEW_INCOMPLETE"]
+        }
+      }
+    },
+    {
+      "id": "large-run-prior-attempts",
+      "title": "Run has more than 30 jobs and prior attempts",
+      "skills": ["actions-workflow-toolkit"],
+      "prompt": "Assess run 460 and the evidence needed for diagnosis.",
+      "evidenceIds": ["RUN", "JOBS_PAGE_1", "JOBS_PAGE_2", "ATTEMPT_1", "ATTEMPT_2", "ATTEMPT_3"],
+      "fixture": {
+        "files": {
+          ".github/workflows/matrix.yml": "name: Matrix\non: push\njobs:\n  test:\n    strategy:\n      matrix:\n        shard: [1, 2, 3, 4, 5, 6, 7]\n        os: [ubuntu-latest, macos-latest, windows-latest, ubuntu-24.04, ubuntu-22.04, macos-15]\n    runs-on: ${{ matrix.os }}\n    steps:\n      - run: echo ${{ matrix.shard }}\n"
+        },
+        "ghRules": [
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/460"],
+            "stdout": "{\"id\":460,\"run_attempt\":3,\"conclusion\":\"failure\"}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/460/jobs?per_page=30&page=1"],
+            "stdout": "{\"total_count\":42,\"jobs\":[{\"id\":1},{\"id\":2},{\"id\":3},{\"id\":4},{\"id\":5},{\"id\":6},{\"id\":7},{\"id\":8},{\"id\":9},{\"id\":10},{\"id\":11},{\"id\":12},{\"id\":13},{\"id\":14},{\"id\":15},{\"id\":16},{\"id\":17},{\"id\":18},{\"id\":19},{\"id\":20},{\"id\":21},{\"id\":22},{\"id\":23},{\"id\":24},{\"id\":25},{\"id\":26},{\"id\":27},{\"id\":28},{\"id\":29},{\"id\":30}]}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/460/jobs?per_page=30&page=2"],
+            "stdout": "{\"total_count\":42,\"jobs\":[{\"id\":31},{\"id\":32},{\"id\":33},{\"id\":34},{\"id\":35},{\"id\":36},{\"id\":37},{\"id\":38},{\"id\":39},{\"id\":40},{\"id\":41},{\"id\":42}]}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/460/attempts/1"],
+            "stdout": "{\"run_attempt\":1,\"conclusion\":\"failure\"}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/460/attempts/2"],
+            "stdout": "{\"run_attempt\":2,\"conclusion\":\"failure\"}"
+          },
+          {
+            "argv": ["api", "repos/octo/synthetic/actions/runs/460/attempts/3"],
+            "stdout": "{\"run_attempt\":3,\"conclusion\":\"failure\"}"
+          }
+        ]
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["JOB_COUNT_42", "THREE_ATTEMPTS_PRESENT"],
+          "claims": ["PAGINATION_REQUIRED", "PRIOR_ATTEMPTS_REQUIRED"],
+          "evidence": ["RUN", "JOBS_PAGE_1", "JOBS_PAGE_2", "ATTEMPT_1", "ATTEMPT_2", "ATTEMPT_3"],
+          "abstentions": ["DO_NOT_STOP_AT_FIRST_30_JOBS"]
+        },
+        "mustNot": {
+          "claims": ["ONLY_30_JOBS", "LATEST_ATTEMPT_ONLY_IS_COMPLETE"]
+        },
+        "allowedClaims": ["JOB_COUNT_42", "THREE_ATTEMPTS_PRESENT", "PAGINATION_REQUIRED", "PRIOR_ATTEMPTS_REQUIRED"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["PAGINATION_REQUIRED", "PRIOR_ATTEMPTS_REQUIRED"]
+        }
+      }
+    },
+    {
+      "id": "free-unknown-rate-no-invented-savings",
+      "title": "Free and unknown-rate compute has no defensible dollar savings",
+      "skills": ["actions-optimization"],
+      "prompt": "Assess the optimization impact of the hosted and self-hosted jobs.",
+      "evidenceIds": ["WORKFLOW", "BILLING_FACTS", "DURATION_FACTS"],
+      "fixture": {
+        "files": {
+          ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  hosted:\n    runs-on: ubuntu-latest\n    steps:\n      - run: sleep 10\n  private-runner:\n    runs-on: [self-hosted, linux]\n    steps:\n      - run: sleep 20\n",
+          "billing.json": "{\"repository_visibility\":\"public\",\"hosted_billed_minutes\":0,\"self_hosted_hourly_rate\":null}\n",
+          "durations.json": "{\"hosted_minutes\":10,\"self_hosted_minutes\":20,\"candidate_reduction_minutes\":5}\n"
+        },
+        "ghRules": []
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["DOLLAR_SAVINGS_NOT_QUANTIFIABLE"],
+          "claims": ["REPORT_MINUTES_ONLY", "HOSTED_COMPUTE_FREE_FOR_CASE", "SELF_HOSTED_RATE_UNKNOWN"],
+          "evidence": ["WORKFLOW", "BILLING_FACTS", "DURATION_FACTS"],
+          "abstentions": ["DO_NOT_INVENT_DOLLAR_SAVINGS"]
+        },
+        "mustNot": {
+          "claims": ["SAVES_5_DOLLARS", "SAVES_50_PERCENT_COST", "KNOWN_SELF_HOSTED_SAVINGS"]
+        },
+        "allowedClaims": ["DOLLAR_SAVINGS_NOT_QUANTIFIABLE", "REPORT_MINUTES_ONLY", "HOSTED_COMPUTE_FREE_FOR_CASE", "SELF_HOSTED_RATE_UNKNOWN"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["REPORT_MINUTES_ONLY"]
+        }
+      }
+    },
+    {
+      "id": "string-environment-concurrency",
+      "title": "String environment and concurrency forms are valid",
+      "skills": ["actions-architecture-review"],
+      "prompt": "Review the workflow's environment and concurrency configuration.",
+      "evidenceIds": ["WORKFLOW"],
+      "fixture": {
+        "files": {
+          ".github/workflows/deploy.yml": "name: Deploy\non: push\nconcurrency: deploy-production\njobs:\n  deploy:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo deploy\n"
+        },
+        "ghRules": []
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["STRING_SHORTHAND_VALID"],
+          "claims": ["ENVIRONMENT_STRING_VALID", "CONCURRENCY_STRING_VALID"],
+          "evidence": ["WORKFLOW"],
+          "abstentions": ["DO_NOT_REWRITE_VALID_SHORTHAND"]
+        },
+        "mustNot": {
+          "claims": ["ENVIRONMENT_MUST_BE_OBJECT", "CONCURRENCY_MUST_BE_OBJECT", "WORKFLOW_SCHEMA_INVALID"]
+        },
+        "allowedClaims": ["STRING_SHORTHAND_VALID", "ENVIRONMENT_STRING_VALID", "CONCURRENCY_STRING_VALID"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["STRING_SHORTHAND_VALID"]
+        }
+      }
+    },
+    {
+      "id": "unreadable-reusable-callee",
+      "title": "Reusable workflow callee cannot be read",
+      "skills": ["actions-architecture-review"],
+      "prompt": "Assess the reusable workflow call and available contract evidence.",
+      "evidenceIds": ["CALLER", "CALLEE_404"],
+      "fixture": {
+        "files": {
+          ".github/workflows/caller.yml": "name: Caller\non: push\njobs:\n  release:\n    uses: octo/private-automation/.github/workflows/release.yml@0123456789abcdef0123456789abcdef01234567\n    with:\n      channel: stable\n    secrets: inherit\n"
+        },
+        "ghRules": [
+          {
+            "argv": ["api", "repos/octo/private-automation/contents/.github/workflows/release.yml?ref=0123456789abcdef0123456789abcdef01234567"],
+            "stderr": "HTTP 404: Not Found",
+            "exitCode": 1
+          }
+        ]
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["CALLEE_UNREADABLE", "CONTRACT_REVIEW_BLOCKED"],
+          "claims": ["CALLER_SYNTAX_VISIBLE", "CALLEE_BEHAVIOR_UNKNOWN"],
+          "evidence": ["CALLER", "CALLEE_404"],
+          "abstentions": ["DO_NOT_INFER_CALLEE_CONTRACT"]
+        },
+        "mustNot": {
+          "claims": ["CALLEE_SECURE", "CALLEE_INPUTS_VALIDATED", "CALLEE_PERMISSIONS_KNOWN"]
+        },
+        "allowedClaims": ["CALLEE_UNREADABLE", "CONTRACT_REVIEW_BLOCKED", "CALLER_SYNTAX_VISIBLE", "CALLEE_BEHAVIOR_UNKNOWN"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["CALLEE_BEHAVIOR_UNKNOWN"]
+        }
+      }
+    },
+    {
+      "id": "justified-extraction-preserves-contracts",
+      "title": "Repeated release jobs justify extraction with contract preservation",
+      "skills": ["actions-architecture-review"],
+      "prompt": "Assess whether refactoring is warranted and identify relevant behavioral contracts.",
+      "evidenceIds": ["SERVICE_A", "SERVICE_B", "SERVICE_C", "REPETITION_FACTS"],
+      "fixture": {
+        "files": {
+          ".github/workflows/service-a.yml": "name: A\non: workflow_dispatch\npermissions:\n  contents: read\n  packages: write\njobs:\n  release:\n    runs-on: ubuntu-latest\n    environment: production\n    outputs:\n      digest: ${{ steps.build.outputs.digest }}\n    steps:\n      - id: build\n        run: echo digest=aaa >> \"$GITHUB_OUTPUT\"\n",
+          ".github/workflows/service-b.yml": "name: B\non: workflow_dispatch\npermissions:\n  contents: read\n  packages: write\njobs:\n  release:\n    runs-on: ubuntu-latest\n    environment: production\n    outputs:\n      digest: ${{ steps.build.outputs.digest }}\n    steps:\n      - id: build\n        run: echo digest=bbb >> \"$GITHUB_OUTPUT\"\n",
+          ".github/workflows/service-c.yml": "name: C\non: workflow_dispatch\npermissions:\n  contents: read\n  packages: write\njobs:\n  release:\n    runs-on: ubuntu-latest\n    environment: production\n    outputs:\n      digest: ${{ steps.build.outputs.digest }}\n    steps:\n      - id: build\n        run: echo digest=ccc >> \"$GITHUB_OUTPUT\"\n",
+          "CASE.md": "The three release jobs have the same permissions, environment gate, output name, secret needs, and control flow. Only the service-specific build command differs.\n"
+        },
+        "ghRules": []
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["EXTRACTION_JUSTIFIED_BY_REPETITION"],
+          "claims": ["PRESERVE_INPUTS", "PRESERVE_SECRETS", "PRESERVE_PERMISSIONS", "PRESERVE_OUTPUTS", "PRESERVE_ENVIRONMENT_GATES"],
+          "evidence": ["SERVICE_A", "SERVICE_B", "SERVICE_C", "REPETITION_FACTS"],
+          "abstentions": ["DO_NOT_CHANGE_CONTRACT_DURING_EXTRACTION"]
+        },
+        "mustNot": {
+          "claims": ["DROP_PERMISSIONS", "DROP_OUTPUTS", "REMOVE_ENVIRONMENT_GATE", "USE_SECRETS_INHERIT_UNCONDITIONALLY"]
+        },
+        "allowedClaims": ["EXTRACTION_JUSTIFIED_BY_REPETITION", "PRESERVE_INPUTS", "PRESERVE_SECRETS", "PRESERVE_PERMISSIONS", "PRESERVE_OUTPUTS", "PRESERVE_ENVIRONMENT_GATES"],
+        "behavior": {
+          "expectsChanges": true,
+          "preserveClaims": ["PRESERVE_INPUTS", "PRESERVE_SECRETS", "PRESERVE_PERMISSIONS", "PRESERVE_OUTPUTS", "PRESERVE_ENVIRONMENT_GATES"]
+        }
+      }
+    },
+    {
+      "id": "healthy-small-estate-unchanged",
+      "title": "Healthy small workflow estate should remain unchanged",
+      "skills": ["actions-architecture-review", "actions-optimization", "actions-security-review"],
+      "prompt": "Review the two-workflow estate and recommend warranted actions.",
+      "evidenceIds": ["CI_WORKFLOW", "RELEASE_WORKFLOW", "HEALTH_FACTS"],
+      "fixture": {
+        "files": {
+          ".github/workflows/ci.yml": "name: CI\non: pull_request\npermissions:\n  contents: read\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n      - run: npm test\n",
+          ".github/workflows/release.yml": "name: Release\non:\n  push:\n    tags: ['v*']\npermissions:\n  contents: read\n  packages: write\njobs:\n  publish:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm publish\n",
+          "health.json": "{\"median_queue_seconds\":4,\"p95_duration_minutes\":7,\"failed_runs_last_30_days\":0,\"monthly_runs\":18}\n"
+        },
+        "ghRules": []
+      },
+      "scoring": {
+        "must": {
+          "diagnosis": ["SMALL_ESTATE_HEALTHY"],
+          "claims": ["NO_MATERIAL_SECURITY_FINDING", "NO_MATERIAL_OPTIMIZATION", "NO_EXTRACTION_JUSTIFIED", "NO_CHANGES_RECOMMENDED"],
+          "evidence": ["CI_WORKFLOW", "RELEASE_WORKFLOW", "HEALTH_FACTS"],
+          "abstentions": ["DO_NOT_CHURN_HEALTHY_WORKFLOWS"]
+        },
+        "mustNot": {
+          "claims": ["REWRITE_WORKFLOWS", "EXTRACT_REUSABLE_WORKFLOW", "BUY_MORE_RUNNERS", "UNPIN_ACTIONS"]
+        },
+        "allowedClaims": ["SMALL_ESTATE_HEALTHY", "NO_MATERIAL_SECURITY_FINDING", "NO_MATERIAL_OPTIMIZATION", "NO_EXTRACTION_JUSTIFIED", "NO_CHANGES_RECOMMENDED"],
+        "behavior": {
+          "expectsChanges": false,
+          "preserveClaims": ["NO_CHANGES_RECOMMENDED"]
+        }
+      }
+    }
+  ]
+}

@@ -24,6 +24,8 @@ Rules:
 - Include clean checks. Silence is ambiguous.
 - Include skipped checks. Hidden gaps are worse than known gaps.
 - First-party action tag pins, low-confidence cache-poisoning, and `artipacked` hygiene belong in grouped hardening unless they combine with an exploit path.
+- State policy evidence as `checked`, `finding`, or `not checked`. Unavailable
+  org, repository, runner, or cloud configuration is never a clean check.
 
 If online zizmor audits hard-failed and the successful rerun used `--no-online-audits` or `--offline`, say so:
 
@@ -55,6 +57,12 @@ Skipped checks: zizmor network-dependent audits were skipped after the online pa
 
 Why: this job checks out PR-controlled code and executes it with base-repo privileges. Move tests to `pull_request`; keep only bounded metadata writes on `pull_request_target` if needed.
 ````
+
+Choose the smallest diff that breaks the exploitable data flow while preserving
+the workflow's intended behavior. Say explicitly when a proposed change can
+alter pushes, publishing, permissions, secret availability, action behavior, or
+reusable-workflow inputs. Do not recommend a broad trigger rewrite for a safe,
+bounded metadata-only job.
 
 ## False-positive notes
 

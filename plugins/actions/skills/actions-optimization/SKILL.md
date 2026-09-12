@@ -1,156 +1,109 @@
 ---
 name: actions-optimization
-description: "Makes GitHub Actions workflows faster and cheaper by measuring before changing anything, separating queue time from run time from failure-driven reruns, then applying the highest-ROI lever as an exact YAML diff with live citations. Use when: CI is slow, reduce Actions minutes, cut CI costs, why is my cache not hitting, speed up my workflow, runner sizing, workflow takes too long, reduce GitHub Actions bill, diagnose queue time, fix flaky reruns, optimize matrix builds, tune Docker layer caching, or right-size GitHub-hosted runners. Load alongside actions-workflow-toolkit for tooling, safety contract, performance-data mechanics, API commands, JSON shapes, and documentation URL lookup."
+description: "Makes GitHub Actions workflows faster and cheaper by separating queue delay, execution wall clock, rounded job minutes, rerun waste, and billed cost before proposing a bounded change. Use when: CI is slow, reduce Actions minutes or cost, diagnose queueing or flakes, improve caches, tune matrices, right-size runners, or reduce unnecessary runs. Load actions-workflow-toolkit for helper contracts, scanners, and live documentation links."
 ---
 
 # Actions Optimization
 
-Load [`actions-workflow-toolkit`](../actions-workflow-toolkit/SKILL.md) first. This file is only the optimization playbook: diagnosis, lever selection, savings math, and YAML fix patterns.
+Load [`actions-workflow-toolkit`](../actions-workflow-toolkit/SKILL.md). Optimize from evidence, not YAML aesthetics.
 
-## Guardrails before recommending anything
+## 1. Define the question and guardrails
 
-- Do not remove a required check. A fast CI that stopped validating is a regression.
-- Do not drop matrix legs that represent a real support commitment. Mark those as product decisions, not optimization wins.
-- Do not reduce parallelism unless measured fixed overhead is larger than the work saved.
-- Split recommendations into repo-editable YAML changes and org-level settings changes. Runner groups, spending controls, hosted-runner policy, and enterprise concurrency are not PR diffs.
-- Cite live docs through the toolkit docs map, not memory: [`docs-map.md`](../actions-workflow-toolkit/references/docs-map.md).
+Record the exact repository, workflow/run, branch or SHA, attempt, observation window, and whether the goal is latency, reliability, rounded minutes, or invoice cost.
 
-## Phase 1: Measure
+Before changing triggers, job names, matrices, runners, or reusable workflows:
 
-Start with data, not grep. Static YAML review tells you possible waste; metrics tell you where the bill and latency actually are.
+- Record required check contexts from the applicable ruleset or branch protection. If inaccessible, mark this unknown and do not claim a filter or rename is safe.
+- Record the supported OS, architecture, runtime/version, service, and integration matrix. Dropping a leg is a product decision, never an optimization assumption.
+- Trace `jobs.<id>.uses` to the file/ref that owns the configuration and behavior, and list known callers. Reusable-workflow usage is billed to the caller, so attribute billing to the calling repository while keeping configuration ownership with the pinned callee.
+- Separate repo-editable YAML from org settings such as runner groups, concurrency limits, capacity, and spending policy.
 
-Label every finding by evidence quality:
+## 2. Collect the smallest sufficient evidence
 
-| Grade | Meaning | Allowed claim |
+Use this order and stop when the question is answered:
+
+1. Actions Performance Metrics for queue time, run time, and failure rate.
+2. Actions Usage Metrics or billing export for minutes/cost concentration.
+3. One or more exact run attempts for job/step timing:
+
+   ```bash
+   python3 ../actions-workflow-toolkit/scripts/collect-run-data.py \
+     --repository OWNER/REPO --run-id RUN_ID --attempt ATTEMPT --pretty
+   ```
+
+   Omit `--attempt` only when "latest attempt" is intentional; use
+   `--all-attempts --max-attempts N` for the latest bounded repeated-attempt
+   range. Logs are not fetched by default. Probe only named jobs with repeated
+   `--log-job-id ID` options.
+   Check per-attempt `coverage`, `total_count`, counted/reused IDs, and
+   provenance before using the result. A bounded run sample is **Sampled**
+   evidence, not frequency, usage, or invoice truth.
+
+4. Static workflow inspection only when the question depends on configuration.
+
+Scanner use is conditional:
+
+- Telemetry-only diagnosis: do not run `actionlint` or `zizmor`.
+- Proposed or applied YAML edit: run `actionlint` on the affected workflow before and after.
+- Security/trust question, or an edit to permissions, triggers, credentials, caches, or untrusted expressions: also run `zizmor`.
+- If a scanner is unavailable, state that limitation. Do not install tools unless the caller authorized it.
+
+Use live documentation through [`references/docs-map.md`](../actions-workflow-toolkit/references/docs-map.md). Do not copy prices, limits, or runner specifications from memory.
+
+## 3. Keep the accounting planes separate
+
+| Plane | Calculation | Claim |
 |---|---|---|
-| **Measured** | Before/after telemetry, billing, or repeated run data from the target workload | Quantify the observed change and its sample window. |
-| **Sampled** | A bounded run/job sample from the target repository | Describe the observed sample; do not annualize without run frequency. |
-| **Static** | Workflow structure, configuration, or linter evidence only | Call it a candidate or risk, not a realized saving. |
-| **Estimated** | Arithmetic using measured inputs plus an unmeasured candidate | Show assumptions and require a canary before calling it a result. |
+| Run created-to-started | run `created_at` → `run_started_at` | Raw elapsed provenance only. It is not runner queue time and cannot establish capacity pressure, especially across reruns. |
+| Job waiting | job `created_at` → `started_at` | Observed job delay. Use Performance Metrics and runner-label correlation before attributing it to capacity. |
+| Wall clock | selected-attempt job execution span | Latency proxy. The jobs API lacks the `needs` graph, so do not call it a reconstructed dependency critical path. |
+| Rounded job minutes | `ceil(job duration / 60s)` for each uniquely identified selected-attempt job | Cost-estimate input. Exclude jobs reused from another attempt and disclose unfinished/missing durations. |
+| Billed cost | Billing/usage truth, or rounded minutes × a verified live SKU rate with billing assumptions | Never infer a SKU/rate from an unknown label. If visibility, included minutes, SKU, rate, or invoice treatment is unknown, cost is unavailable. |
 
-| Signal | Source | What it means | Next move |
-|---|---|---|---|
-| High average queue time | Actions Performance Metrics via toolkit | Capacity or concurrency problem, not workflow inefficiency | Do not refactor YAML first. Check runner availability, org concurrency, `max-parallel`, and superseded-run cancellation. |
-| High average run time | Actions Performance Metrics, then `/jobs` API | Critical path is inside the job | Use job and step timings to choose cache, checkout, Docker, matrix, or runner-sizing fixes. |
-| High failure rate | Actions Performance Metrics | Reruns are multiplying cost | Fix flake, environment instability, dependency fetch failures, or fail-fast behavior before tuning runtime. |
-| Minutes concentrated in one workflow/repo | Actions Usage Metrics | The expensive target is known | Optimize that workflow first, even if another file looks uglier. |
-| One slow step dominates a run | `/actions/runs/{id}/jobs` through toolkit | Step-level bottleneck | Apply the lever that matches that step. |
+Treat `null`, unfinished, cancelled, skipped, inaccessible, and missing-log evidence explicitly. Never convert partial coverage into a clean result.
 
-Toolkit mechanics and caveats live in [`../actions-workflow-toolkit/SKILL.md#get-real-performance-data`](../actions-workflow-toolkit/SKILL.md#step-3--get-real-performance-data). Do not use deprecated run timing data or public-repo `billable.total_ms` for cost math. Use `/jobs` durations rolled up by runner SKU plus the live rate card for cost, and wall-clock critical path for latency.
+Evidence grades:
 
-### Public-repo fallback when dashboards are unavailable
+- **Measured:** target before/after telemetry or billing; quantify the observed window.
+- **Sampled:** bounded target run/job evidence; describe only the sample.
+- **Static:** workflow/configuration evidence; call it a candidate or risk.
+- **Estimated:** measured inputs plus an unmeasured candidate; show assumptions and require a canary.
 
-If Actions Performance Metrics or Usage Metrics are unavailable, do not stall. Use a small public run sample:
+## 4. Diagnose in order
 
-```bash
-gh run list --repo OWNER/REPO --limit 100 --json databaseId,name,conclusion,event,createdAt,updatedAt,headBranch
-gh api repos/OWNER/REPO/actions/runs/RUN_ID/jobs
-```
+1. **Measured queue/job waiting dominates:** investigate runner supply, org concurrency, runner-label scarcity, matrix fan-out, and superseded runs. Do not infer this from run created-to-started elapsed and do not start with cache tuning.
+2. **Failures/reruns dominate:** fix flake, service readiness, dependency fetch instability, isolation, or fail-fast behavior before runtime tuning.
+3. **Runs trigger unnecessarily:** consider safe path/branch filters, monorepo change detection, or PR-only cancellation. Preserve required check contexts and default-branch validation.
+4. **Execution dominates:** use job and step timings to target dependency caching, checkout, Docker layers, test parallelism, runner sizing, matrix shape, or job graph overhead.
 
-Label this **sampled public telemetry, not billing or usage truth**. It is biased by run retention, the chosen sample size, branch/event mix, and whatever happened to run recently.
+Detailed branching: [`references/decision-tree.md`](references/decision-tree.md). Exact patterns: [`references/fix-patterns.md`](references/fix-patterns.md).
 
-Use it only for observed patterns:
+## 5. Quantify honestly
 
-- Observed workflows, events, conclusions, branches, and cadence inside the sampled window.
-- Per-job duration from `/jobs` `started_at` and `completed_at`; this is the reliable duration source.
-- Step timings for bottleneck diagnosis when present.
-
-Keep the cost math strict. GitHub rounds each job's partial minutes up to the nearest whole minute, so estimate per-run cost as the sum of rounded per-job minutes grouped by runner label/SKU, then apply the live rate card from [`docs-map.md#performance-and-cost`](../actions-workflow-toolkit/references/docs-map.md#performance-and-cost). Workflow wall-clock is latency, not cost. If any jobs are missing from the API response, do not estimate cost from the partial job list.
-
-Do not convert this sample into customer run frequency, billable usage, or savings. Say "observed in the last 100 listed runs" and leave annualized/monthly savings unquantified unless Usage Metrics, workflow history coverage, or the repo owner supplies frequency.
-
-### Scale out without duplicating analysis
-
-For a large monorepo or multi-repository estate, parallelize only across non-overlapping workflow families or repositories. Give each worker an explicit file/repository boundary and one output schema. Keep transitive reusable-workflow discovery, shared action references, and final deduplication with one coordinator so two workers do not optimize the same inherited job from opposite ends.
-
-Trace reusable workflows before changing a caller:
-
-1. Record every `jobs.<id>.uses` edge and its pinned ref.
-2. Fetch the callee and repeat until the chain ends or GitHub's live nesting limit is reached.
-3. Attribute runner choice, permissions, cache behavior, and duplicated setup to the file that actually owns it.
-4. List all callers before changing a shared callee; one optimization can affect an entire estate.
-
-## Phase 2: Diagnose
-
-Use this order. It prevents the classic mistake: optimizing YAML while jobs are just waiting for capacity.
+Use [`references/savings-math.md`](references/savings-math.md).
 
 ```text
-1. Queue time high?
-   yes -> capacity/concurrency diagnosis.
-          repo YAML levers: concurrency cancel-in-progress, max-parallel shaping.
-          org levers: runner availability, larger runner pools, concurrency policy.
-          stop calling this a workflow optimization until queue is explained.
-
-2. Failure rate high?
-   yes -> rerun-waste diagnosis.
-          fix flakes, dependency instability, test isolation, fail-fast policy.
-          estimate cost as failed attempts + reruns, not successful run time.
-
-3. Usage concentrated in a workflow triggered too often?
-   yes -> trigger/path diagnosis.
-          add safe path filters or monorepo change detection.
-          avoid required-check deadlocks.
-
-4. Run time high after queue and failure are explained?
-   yes -> critical-path diagnosis from job step timings.
-          dependency install slow -> package-manager cache.
-          Docker build slow -> buildx gha or registry cache, layer ordering.
-          checkout slow -> sparse checkout, LFS/submodule scrutiny.
-          CPU-bound tests -> runner sizing, matrix, or ARM compatibility.
-          many tiny jobs -> job graph consolidation.
+per_run_estimate = sum(selected unique job rounded minutes × verified live rate)
+period_estimate = per_run_estimate × measured runs in the same period
 ```
 
-Detailed branching logic: [`references/decision-tree.md`](references/decision-tree.md).
+No run frequency means no monthly/annual estimate. No measured candidate runtime means runner-sizing savings are hypothetical. Queue reduction alone is latency improvement, not cost savings. Public standard-runner samples may demonstrate latency/resource use without proving a bill reduction.
 
-## Phase 3: Fix, ranked by usual ROI
+## 6. Canary and rollback
 
-1. **Cancel superseded PR runs.** Best first PR for noisy repos. Use `concurrency` groups that include event type and do not cancel default-branch runs. Syntax citation: [`docs-map.md#performance-and-cost`](../actions-workflow-toolkit/references/docs-map.md#performance-and-cost).
-2. **Move compatible Linux jobs to ARM64 standard runners.** Often a one-line win. Verify native dependencies and Docker image architecture first. Current labels and specs: [`docs-map.md#performance-and-cost`](../actions-workflow-toolkit/references/docs-map.md#performance-and-cost).
-3. **Check `ubuntu-latest` visibility behavior.** The same label maps to different hosted-runner capacity for public vs private repos. Do not copy the specs; cite the live runner reference: [`docs-map.md#performance-and-cost`](../actions-workflow-toolkit/references/docs-map.md#performance-and-cost).
-4. **Stop running expensive workflows on irrelevant changes.** Use path filters or dynamic monorepo matrices, but handle required-status-check deadlocks. Trigger docs: [`docs-map.md#syntax-and-semantics`](../actions-workflow-toolkit/references/docs-map.md#syntax-and-semantics).
-5. **Cache package-manager stores, not random build directories.** Prefer `setup-*` built-in cache inputs when they cover the ecosystem; use `actions/cache` for custom paths. Cache behavior citation: [`docs-map.md#performance-and-cost`](../actions-workflow-toolkit/references/docs-map.md#performance-and-cost).
-6. **Right-size runners with arithmetic.** Larger runners can be cheaper only when measured billable-minute reduction beats the rate multiplier. They have separate billing behavior from included minutes, so cite the current docs before recommending them: [`docs-map.md#performance-and-cost`](../actions-workflow-toolkit/references/docs-map.md#performance-and-cost).
-7. **Shape the matrix.** Use `fail-fast`, `max-parallel`, and dynamic `fromJSON` matrices for selective monorepo builds. Matrix docs: [`docs-map.md#performance-and-cost`](../actions-workflow-toolkit/references/docs-map.md#performance-and-cost).
-8. **Fix job graph shape.** Every job has VM, checkout, and dependency overhead. Splitting only wins when branches are long and independent.
-9. **Reduce checkout and Docker tax.** Keep checkout shallow unless history is required, use sparse checkout, scrutinize LFS/submodules, tune `buildx` cache scopes, and switch to registry cache when GitHub cache limits are the bottleneck. Checkout/action and Docker references start from [`docs-map.md`](../actions-workflow-toolkit/references/docs-map.md).
+For runner, cache, trigger, matrix, reusable-workflow, or job-graph changes:
 
-Exact before/after YAML: [`references/fix-patterns.md`](references/fix-patterns.md). Savings method and report shape: [`references/savings-math.md`](references/savings-math.md).
+1. Freeze the baseline window and metrics: successful-run rounded minutes/cost where known, p50/p95 queue and wall clock, failure/rerun rate, required checks, artifacts, and support matrix.
+2. Canary one workflow family, repository, service, or explicit cohort.
+3. State the observation window and acceptance thresholds before rollout.
+4. Define rollback: missing check/artifact, unsupported platform, cache correctness failure, higher failure rate, cost/run regression, or p95 outside threshold.
+5. Expand only after the canary passes. Shared reusable workflows need a bounded caller cohort and a rollback ref.
 
-## Phase 4: Canary and rollback
+## Required response
 
-Do not call a static recommendation a saving. For changes that alter runner architecture/size, caching, path selection, matrix shape, or shared reusable workflows:
+Return:
 
-1. Define the baseline window and success metrics: successful-run cost, p50/p95 queue time, p50/p95 wall time, and failure/rerun rate.
-2. Canary on one workflow family, repository, service, or explicitly selected traffic cohort.
-3. Keep required checks, artifact outputs, permissions, and supported matrix coverage unchanged unless the product owner approved the change.
-4. Define rollback before rollout. Examples: higher failure rate, missing artifacts, unsupported architecture, cache correctness issues, cost/run regression, or p95 latency outside the agreed threshold.
-5. Expand only after the canary meets the stated observation window and acceptance criteria.
+1. A short summary naming the dominant plane and first lever.
+2. For each recommendation: evidence and grade, exact scope, required-check/support-matrix impact, proposed diff or org action, live citation, savings math or missing inputs, verification, canary, and rollback.
 
-## Required output
-
-Return two layers.
-
-**Layer 1: screen-share summary**
-
-Plain language, quantified when data exists:
-
-> Roughly 40% of measured CI minutes are from `ci.yml`, and most of that is reruns from failed PR attempts. The first fix is flake reduction plus canceling superseded PR runs, not runner sizing.
-
-If run frequency is unknown, say the estimate is unquantified. Do not invent runs/day.
-
-**Layer 2: implementation detail**
-
-For each recommendation:
-
-```text
-Finding: Superseded PR runs are still executing.
-Evidence: .github/workflows/ci.yml:1 plus Actions Usage Metrics for ci.yml.
-Evidence grade: Measured.
-Change: add workflow-level concurrency scoped to event + PR/ref.
-Diff: <exact diff>
-Citation: ../actions-workflow-toolkit/references/docs-map.md#performance-and-cost
-Expected savings: per-job rounded minute saving × measured runs/day. Frequency missing -> unquantified.
-Scope: repo YAML change.
-Canary: one PR workflow family for <observation window>.
-Rollback: <metric threshold or functional regression that restores the prior workflow>.
-```
+Say what was not checked. Never present sampled, partial, or static evidence as measured savings.

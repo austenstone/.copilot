@@ -2,6 +2,11 @@
 
 Tools find workflow-local bugs. Recurrence prevention lives at repo, org, and enterprise policy layers. Use GitHub docs through [`docs-map.md`](../../actions-workflow-toolkit/references/docs-map.md), especially secure use, OIDC, GITHUB_TOKEN, self-hosted runners, and artifact attestations.
 
+For every control below, report one of `checked`, `finding`, or `not checked`.
+If the relevant policy, settings, or cloud configuration is unavailable, the
+result is `not checked`; absence of evidence is not evidence that the control is
+enabled.
+
 ## Allowed actions policy
 
 Ask whether the org restricts actions to GitHub-owned, Marketplace-verified, or explicitly allowed actions. If anyone can add a random `uses: owner/repo@main`, SHA pinning becomes the last line of defense instead of the first.

@@ -27,10 +27,17 @@ ALLOWED_FIELDS = {
     "extensions",
 }
 REQUIRED_SKILLS = {
+    "actions-debug",
     "actions-workflow-toolkit",
     "actions-optimization",
     "actions-security-review",
     "actions-architecture-review",
+}
+REQUIRED_TOOLKIT_FILES = {
+    "references/helper-contract.md",
+    "scripts/collect-run-data.py",
+    "scripts/inventory-workflows.py",
+    "scripts/scan-workflows.py",
 }
 NAME = re.compile(r"^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$")
 
@@ -112,7 +119,17 @@ def validate_package_paths() -> None:
             f"expected {sorted(REQUIRED_SKILLS)}, found {sorted(skills)}"
         )
 
-    print("ok    self-contained package paths and four fixed-location skills")
+    toolkit = PLUGIN_ROOT / "skills/actions-workflow-toolkit"
+    missing = sorted(
+        relative
+        for relative in REQUIRED_TOOLKIT_FILES
+        if not (toolkit / relative).is_file()
+    )
+    if missing:
+        sys.exit(f"toolkit is missing portable runtime files: {missing}")
+
+    print("ok    self-contained package paths and five fixed-location skills")
+    print("ok    toolkit contains the helper contract and three callable helpers")
 
 
 def validate_marketplace(manifest: dict) -> None:

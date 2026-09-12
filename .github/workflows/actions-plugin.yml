@@ -42,13 +42,16 @@ jobs:
       - name: Relative links and anchors resolve
         run: python3 scripts/check-links.py
 
+      - name: Individual skill and toolkit copies stay self-contained
+        run: python3 scripts/check-portable-layout.py
+
       - name: Cited URLs resolve
         run: ./scripts/check-urls.sh
 
-      - name: No invented or stale zizmor rule names
+      - name: Referenced zizmor identifiers exist
         run: ./scripts/check-audit-idents.sh
 
-      - name: Cited action references exist and are current
+      - name: Cited action references match their documented intent
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./scripts/check-action-refs.sh
@@ -57,7 +60,7 @@ jobs:
         run: python3 scripts/check-recipes.py
 
   corpus:
-    name: Test corpus and wrappers
+    name: Test corpus and helpers
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -83,15 +86,16 @@ jobs:
       - name: Install zizmor
         run: pipx install "zizmor==${ZIZMOR_VERSION}"
 
+      - name: Install Python test dependency
+        run: python3 -m pip install --quiet PyYAML
+
       - name: Verify fixtures
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./test-corpus/verify.sh
 
-      - name: Documented wrapper executes correctly
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: ./scripts/check-wrapper-runs.sh
+      - name: Shipped helper tests
+        run: ./scripts/check-helpers.sh
 
   self-review:
     name: Workflow self review

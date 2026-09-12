@@ -31,6 +31,8 @@ Goal: make the shared path safer than copy-paste.
 
 Do not start with a universal platform repo that handles every language and deployment target. Start with the duplicated thing that hurts today.
 
+Before the canary, publish a compatibility table for inputs, secrets, outputs, permissions, environments, concurrency, runners, refs, check names, and artifacts. Trace nested calls to the requested bound. Keep the old path available when inaccessible or out-of-scope consumers make the blast radius incomplete.
+
 ## C. Monorepo playbook
 
 Goal: run the right checks for the changed graph and still satisfy branch protection.
@@ -38,57 +40,31 @@ Goal: run the right checks for the changed graph and still satisfy branch protec
 1. Identify service/package boundaries and shared-library blast radius.
 2. Add a cheap detection job that emits JSON for affected services.
 3. Feed that JSON into a dynamic matrix.
-4. Keep a stable required check that always runs, even when no service-specific matrix jobs are needed.
+4. Keep a stable required check that always runs, fails on upstream failure or cancellation, and accepts a skipped matrix only when detection explicitly proved no work.
 5. Add `merge_group` wherever merge queue is part of the path.
 6. Revisit cache keys after selective execution exists; caching every unnecessary job is still waste.
 
-Example dynamic matrix workflow:
-
-```yaml
-name: monorepo-ci
-
-on:
-  pull_request:
-  merge_group:
-
-permissions:
-  contents: read
-
-jobs:
-  detect:
-    runs-on: ubuntu-latest
-    outputs:
-      services: ${{ steps.detect.outputs.services }}
-    steps:
-      - uses: actions/checkout@v7
-      - id: detect
-        shell: bash
-        run: |
-          echo 'services=["api","web"]' >> "$GITHUB_OUTPUT"
-
-  test:
-    needs: detect
-    if: ${{ needs.detect.outputs.services != '[]' }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: ${{ fromJSON(needs.detect.outputs.services) }}
-    steps:
-      - uses: actions/checkout@v7
-      - run: npm test --workspace ${{ matrix.service }}
-
-  required-check:
-    needs: [detect, test]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          test '${{ needs.detect.result }}' = 'success'
-          test '${{ needs.test.result }}' != 'failure'
-          test '${{ needs.test.result }}' != 'cancelled'
-```
+Implement the detector, guarded matrix, and stable reporting gate with the
+canonical
+[`required-checks-and-events.md`](../../actions-workflow-toolkit/references/required-checks-and-events.md)
+procedure. Do not copy a permissive gate that treats every skipped matrix as
+success; detector failure, invalid output, required-work failure, and
+cancellation must remain visible.
 
 `dorny/paths-filter` is a pragmatic detector when the service map is path-based. Native `paths` filters are fine for skipping entire workflows, but required checks and merge queue can make skipped workflows block merges. Design the stable required check first.
+
+Canary with current required-check names unchanged. Add `merge_group` before enabling selective execution for a merge queue, and verify the stable check on changed, unchanged, failed, and cancelled matrix paths.
+
+## Rollout gate shared by every playbook
+
+Use one sequence: **canary → cohort → default → deprecate**.
+
+- Canary one representative consumer while the old path remains runnable.
+- Expand only after required checks, outputs/artifacts, permissions, approvals, concurrency, and runner behavior match the recorded contract.
+- Make the pattern the default only after known consumers have a pinned supported ref and ownership.
+- Deprecate only with a rollback ref, support window, and treatment for inaccessible consumers.
+
+Stop and classify the recommendation as conditional when coverage is insufficient to identify affected checks or consumers.
 
 ## CI/CD separation
 
@@ -113,7 +89,10 @@ Do not quote hard limits from memory. Fetch the live limits page through [`../..
 | Nesting depth | Platform team stacks reusable workflows for every concern | Flatten contracts; do not make consumers debug a call stack. |
 | Concurrency | Large estate sends every repo to the same scarce runner pool | Separate capacity planning from workflow refactors. High queue time is not YAML debt. |
 
-Reusable workflow nesting is **10 levels total**: top-level caller plus up to 9 nested workflows. Source: [reuse workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows). Older docs said 4.
+Fetch the current reusable-workflow nesting limit from
+[reuse workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)
+before approving a deeper graph. Do not preserve an old copied limit in the
+review.
 
 ## Migration debt signs
 

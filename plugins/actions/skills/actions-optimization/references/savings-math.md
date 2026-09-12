@@ -18,13 +18,17 @@ Optimization claims need arithmetic. If you cannot measure one input, label the 
 | Runs per day | Actions Usage Metrics, workflow history, or the repo owner's stated run frequency |
 | Current latency | Actions Performance Metrics or `/jobs` critical-path timing from the toolkit |
 | Candidate latency | Measured test branch run, not guessed |
-| Current billable job minutes by runner SKU | Actions Usage Metrics, or `/jobs` durations summed by runner label/SKU with the pricing page's job-duration rounding rule |
+| Current rounded job minutes | Actions Usage Metrics, or unique selected-attempt `/jobs` durations with the pricing page's per-job rounding rule |
 | Candidate billable job minutes by runner SKU | Measured test branch run, calculated the same way as current |
 | Current and candidate runner rates | Live rate card linked in [`docs-map.md#performance-and-cost`](../../actions-workflow-toolkit/references/docs-map.md#performance-and-cost) |
 | Failure rerun count | Performance Metrics failure rate plus run history |
 | Queue time | Performance Metrics |
 
-Do not use deprecated timing responses or public-repo billable fields; the toolkit records those caveats in [`../actions-workflow-toolkit/SKILL.md`](../../actions-workflow-toolkit/SKILL.md#step-3--get-real-performance-data). Use workflow wall-clock for latency, not cost, when jobs run in parallel.
+Do not use deprecated timing responses or public-repo billable fields; the toolkit records those caveats in [`../actions-workflow-toolkit/SKILL.md`](../../actions-workflow-toolkit/SKILL.md#step-3--get-real-performance-data). Use workflow wall-clock for latency, not cost, when jobs run in parallel. Deduplicate by job ID and exclude jobs whose `run_attempt` differs from the selected attempt. Preserve unknown runner labels as unknown: without a verified SKU and live rate, cost is unavailable.
+
+Do not substitute run `created_at` to `run_started_at` elapsed for queue time.
+That raw interval is provenance, not a capacity metric, and is particularly
+misleading across repeated attempts.
 
 ## Cost formulas
 
@@ -56,6 +60,8 @@ cost_saved = 0 unless the change also reduces billed run minutes or avoids rerun
 ```
 
 Queue time hurts developer latency. It does not automatically mean billed runner minutes dropped. Keep those separate.
+
+These formulas are estimates unless the source is billing/usage truth. Repository visibility, included minutes, spending policy, and invoice treatment can make an observed rounded-minute estimate differ from billed cost.
 
 ## Runner-sizing break-even
 
@@ -112,3 +118,4 @@ Estimated savings: <per-run saving × runs/day>, or unquantified because <missin
 - If the workflow uses free standard runners in a public repository, discuss latency and resource stewardship rather than bill reduction. Larger runners are still a billing conversation; cite the live rate card.
 - If the required fix is org-level capacity, do not bury it under a YAML PR.
 - If a shared reusable workflow changes, identify all transitive callers and canary a bounded cohort before moving the shared ref.
+- If required checks or a supported matrix leg would change, treat that as a separately approved policy/product decision rather than savings.

@@ -159,40 +159,17 @@ Why this shape: event type avoids canceling across `push` and `pull_request`; ca
 
 ## 4. Path filters without required-check deadlock
 
-Path syntax is in [`docs-map.md#syntax-and-semantics`](../../actions-workflow-toolkit/references/docs-map.md#syntax-and-semantics). If the check is required, a filtered-out workflow must still produce a successful required context through a companion workflow.
+Top-level path filters can prevent a required workflow from being created.
+Do not use a second workflow with a duplicate check name as the default
+workaround. Keep the workflow always created, detect relevant changes inside
+it, and make one stable `always()` gate the required context.
 
-Primary workflow:
-
-```yaml
-name: required-ci
-on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "package-lock.json"
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: npm test
-```
-
-Companion workflow with the same check name:
-
-```yaml
-name: required-ci
-on:
-  pull_request:
-    paths-ignore:
-      - "src/**"
-      - "package-lock.json"
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "No code changes; required check satisfied."
-```
+Use the canonical
+[`required-checks-and-events.md`](../../actions-workflow-toolkit/references/required-checks-and-events.md)
+pattern. The gate must fail on detector failure, required-work failure, or
+cancellation. It may accept a skipped work job only when the detector
+explicitly produced a valid no-work result. Validate changed, unchanged,
+failed, cancelled, empty-matrix, and `merge_group` paths when applicable.
 
 ## 5. Dynamic monorepo matrix
 
