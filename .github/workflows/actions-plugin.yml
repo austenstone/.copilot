@@ -1,0 +1,129 @@
+name: Actions plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ACTIONLINT_VERSION: 1.7.12
+  ZIZMOR_VERSION: 1.29.0
+
+jobs:
+  package:
+    name: Package and references
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: plugins/actions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Agent plugin and marketplace manifests
+        run: python3 scripts/check-plugin.py
+
+      - name: Skill frontmatter is valid and loadable
+        run: |
+          python3 -c 'import yaml' 2>/dev/null || pip install --quiet pyyaml
+          python3 scripts/check-frontmatter.py
+
+      - name: Relative links and anchors resolve
+        run: python3 scripts/check-links.py
+
+      - name: Cited URLs resolve
+        run: ./scripts/check-urls.sh
+
+      - name: No invented or stale zizmor rule names
+        run: ./scripts/check-audit-idents.sh
+
+      - name: Cited action references exist and are current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/check-action-refs.sh
+
+      - name: Documented shell recipes preserve findings
+        run: python3 scripts/check-recipes.py
+
+  corpus:
+    name: Test corpus and wrappers
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: plugins/actions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 3 \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            -o /tmp/actionlint.tar.gz
+          tar -xzf /tmp/actionlint.tar.gz -C "$HOME/.local/bin" actionlint
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/actionlint" -version
+
+      - name: Install zizmor
+        run: pipx install "zizmor==${ZIZMOR_VERSION}"
+
+      - name: Verify fixtures
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./test-corpus/verify.sh
+
+      - name: Documented wrapper executes correctly
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/check-wrapper-runs.sh
+
+  self-review:
+    name: Workflow self review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 3 \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            -o /tmp/actionlint.tar.gz
+          tar -xzf /tmp/actionlint.tar.gz -C "$HOME/.local/bin" actionlint
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/actionlint" -version
+
+      - name: Install zizmor
+        run: pipx install "zizmor==${ZIZMOR_VERSION}"
+
+      - name: actionlint
+        run: actionlint -color
+
+      - name: zizmor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: zizmor .github/workflows/
+
+      - name: shellcheck
+        run: shellcheck plugins/actions/scripts/*.sh plugins/actions/test-corpus/verify.sh

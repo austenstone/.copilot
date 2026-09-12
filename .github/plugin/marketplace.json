@@ -10,6 +10,20 @@
   },
   "plugins": [
     {
+      "name": "actions",
+      "description": "GitHub Actions workflow analysis skills for correctness, security, optimization, and architecture.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Austen Stone",
+        "url": "https://github.com/austenstone"
+      },
+      "license": "MIT",
+      "repository": "https://github.com/austenstone/.copilot",
+      "homepage": "https://github.com/austenstone/.copilot/tree/main/plugins/actions",
+      "keywords": ["github-actions", "workflows", "security", "optimization", "architecture"],
+      "source": "plugins/actions"
+    },
+    {
       "name": "google",
       "description": "Google search, Gemini AI, and browser automation skills.",
       "version": "1.0.0",
