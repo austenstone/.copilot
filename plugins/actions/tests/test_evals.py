@@ -10,7 +10,7 @@ def load_tests(
     tests: unittest.TestSuite,
     pattern: str | None,
 ) -> unittest.TestSuite:
-    return loader.discover(
+    return unittest.TestLoader().discover(
         str(EVAL_TESTS),
         pattern="test_*.py",
         top_level_dir=str(EVAL_TESTS),
