@@ -11,7 +11,8 @@ My personal GitHub Copilot customizations, synced from `~/.copilot`. Drop these 
 | `skills/` | Agent skills |
 | `agents/` | Custom agents |
 | `hooks/` | Lifecycle hooks + `setup-hooks` installer |
-| `plugin.json` | Copilot CLI plugin manifest |
+| `plugins/` | Self-contained marketplace plugins |
+| `.github/plugin/marketplace.json` | `austenstone` plugin marketplace catalog |
 | `.mcp.json` | Distributable MCP servers (public packages only) |
 | `mcp-config.example.json` | Full personal MCP config. Secrets are `${ENV_VAR}` placeholders |
 
@@ -24,13 +25,22 @@ copilot plugin marketplace add austenstone/.copilot
 copilot plugin install copilot@austenstone
 ```
 
+GitHub Actions workflow review, security, optimization, and architecture skills:
+
+```bash
+copilot plugin marketplace add austenstone/.copilot
+copilot plugin install actions@austenstone
+```
+
+The Actions package is an [Agent Plugins 1.0](https://agent-plugins.org/) plugin. Its canonical, self-contained source and direct skill-copy instructions are in [`plugins/actions/`](plugins/actions/).
+
 ### Manual install
 
 Personal (applies everywhere):
 
 ```bash
 cp -R instructions skills hooks agents ~/.copilot/
-cp copilot-instructions.md plugin.json .mcp.json ~/.copilot/
+cp copilot-instructions.md .mcp.json ~/.copilot/
 ```
 
 Per-repo:

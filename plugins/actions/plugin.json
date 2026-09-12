@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "actions",
+  "version": "1.0.0",
+  "description": "GitHub Actions workflow analysis skills for correctness, security, optimization, and architecture.",
+  "author": {
+    "name": "Austen Stone",
+    "url": "https://github.com/austenstone"
+  },
+  "homepage": "https://github.com/austenstone/.copilot/tree/main/plugins/actions",
+  "repository": "https://github.com/austenstone/.copilot",
+  "license": "MIT",
+  "keywords": [
+    "github-actions",
+    "workflows",
+    "security",
+    "optimization",
+    "architecture"
+  ]
+}
