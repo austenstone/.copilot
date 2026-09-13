@@ -35,6 +35,57 @@ python3 -m unittest discover -s plugins/actions/evals/tests -v
 python3 plugins/actions/evals/harness/run_eval.py --dry-run
 ```
 
+## One-case live Actions smoke eval
+
+[`Actions Copilot smoke eval`](../../../.github/workflows/actions-copilot-smoke.yml)
+runs [`smoke.py`](smoke.py) once on a GitHub-hosted runner. It reuses only the
+public `scanner-hard-failure` fixture files, not the case title or scoring rules.
+The prompt asks whether the captured run establishes a clean scan, with either
+Yes or No followed by an explanation. The single behavioral assertion requires
+the final answer to begin with **No**.
+
+A pass also requires successful CLI completion, positive usage of exactly
+`gpt-5.6-sol-fast`, successful `actions-security-review` **skill-tool activation**
+in native CLI events, and unchanged fixture/plugin files. Package presence or
+skill discovery alone is insufficient. One CLI session may make several model
+requests to load the skill and read evidence; this is not a single API turn.
+
+The runner probes `command -v copilot`, records `copilot --version` and live
+`--help`, and uses the preinstalled binary when available. Only a missing
+executable triggers the documented `npm install --global @github/copilot`
+fallback. The smoke checks its flags against that runner's help before invoking
+the model. It uses the short-lived built-in `GITHUB_TOKEN` with
+`copilot-requests: write`, as documented in
+[Copilot CLI Actions authentication](https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions).
+No PAT, login, or repository secret is created. Authentication or model-access
+failure fails the job; it is never a skipped green eval.
+The [actionlint configuration](../../../.github/actionlint.yaml) suppresses only
+its outdated unknown-scope diagnostic for this workflow's documented
+`copilot-requests` permission.
+
+The agent gets a fresh home and synthetic workspace, a copy of the real plugin
+manifest and skills, and only `view` and `skill` tools. Unrelated instructions,
+MCPs, shell access, edits, URL tools, and remote session export are unavailable.
+The model invocation has a 120-second timeout inside a six-minute job. A concise
+job summary and three-day artifact retain version/help, native events, stderr,
+usage, and the result, but never the home, logs, or authentication state.
+
+Execution is restricted to manual runs on `main` or
+`austenstone-actions-copilot-smoke-eval`, plus scoped pushes to that bootstrap
+branch. There are no PR/fork triggers and default unit CI remains independent of
+model credentials. Until the workflow is registered, a scoped branch push starts
+the first run without modifying `main`; afterward it can be dispatched with:
+
+```bash
+gh workflow run actions-copilot-smoke.yml --repo austenstone/.copilot \
+  --ref austenstone-actions-copilot-smoke-eval
+```
+
+The four local smoke-assertion tests are deterministic checks, **not live evals**.
+This enabled-only case provides neither A/B comparison nor evidence of general
+procedure uplift. Use the paired harness below only when that larger experiment
+is explicitly requested.
+
 ## Paired exact-model runs
 
 Live runs require an existing ephemeral `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or

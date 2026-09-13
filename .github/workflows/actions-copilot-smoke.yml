@@ -1,0 +1,73 @@
+name: Actions Copilot smoke eval
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [austenstone-actions-copilot-smoke-eval]
+    paths:
+      - .github/workflows/actions-copilot-smoke.yml
+      - plugins/actions/evals/smoke.py
+      - plugins/actions/skills/**
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    if: >-
+      github.repository == 'austenstone/.copilot' &&
+      (github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/austenstone-actions-copilot-smoke-eval')
+    runs-on: ubuntu-slim
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      copilot-requests: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout trusted branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Probe runner CLI and inspect live help
+        timeout-minutes: 3
+        # Only bootstrap a missing runner tool; record its installed version below.
+        run: | # zizmor: ignore[adhoc-packages]
+          mkdir -p "$RUNNER_TEMP/actions-smoke"
+          if command -v copilot; then
+            echo "CLI source: preinstalled" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Copilot CLI is not preinstalled; installing the documented npm package."
+            npm install --global @github/copilot
+            echo "CLI source: npm fallback" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          command -v copilot
+          copilot --version | tee "$RUNNER_TEMP/actions-smoke/cli-version.txt"
+          copilot --help | tee "$RUNNER_TEMP/actions-smoke/cli-help.txt"
+
+      - name: One live Copilot smoke case
+        timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 plugins/actions/evals/smoke.py
+
+      - name: Preserve smoke evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: actions-copilot-smoke
+          retention-days: 3
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/actions-smoke/cli-version.txt
+            ${{ runner.temp }}/actions-smoke/cli-help.txt
+            ${{ runner.temp }}/actions-smoke/transcript.jsonl
+            ${{ runner.temp }}/actions-smoke/stderr.txt
+            ${{ runner.temp }}/actions-smoke/usage.json
+            ${{ runner.temp }}/actions-smoke/summary.md

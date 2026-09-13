@@ -1,0 +1,5 @@
+paths:
+  .github/workflows/actions-copilot-smoke.yml:
+    ignore:
+      # GitHub documents this scope; actionlint 1.7.12 does not recognize it yet.
+      - '^unknown permission scope "copilot-requests"\.'
