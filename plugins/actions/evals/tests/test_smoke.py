@@ -61,7 +61,7 @@ class SmokeAssertionTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertNotIn("continue-on-error", workflow)
         self.assertNotRegex(workflow, r"\bsleep\b")
-        self.assertIn("runs-on: ubuntu-slim", workflow)
+        self.assertIn("runs-on: ubuntu-latest", workflow)
         self.assertNotIn("max-parallel", workflow)
         self.assertIn('smoke.py --case "$EVAL_CASE"', workflow)
         self.assertNotIn("pull_request:", workflow)

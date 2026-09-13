@@ -43,7 +43,7 @@ jobs:
       github.repository == 'austenstone/.copilot' &&
       (github.ref == 'refs/heads/main' ||
        github.ref == 'refs/heads/austenstone-actions-copilot-smoke-eval')
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 6
     strategy:
       fail-fast: false

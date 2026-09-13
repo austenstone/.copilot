@@ -39,7 +39,8 @@ python3 plugins/actions/evals/harness/run_eval.py --dry-run
 
 [`Actions Copilot eval matrix`](../../../.github/workflows/actions-copilot-smoke.yml)
 runs all 12 existing corpus cases, one [`smoke.py`](smoke.py) invocation per
-`ubuntu-slim` matrix job. Model work is remote and these jobs need little local
+`ubuntu-latest` matrix job. The runner was switched from `ubuntu-slim` after a
+hosted-runner allocation stall; model work is still remote and needs little local
 CPU. There is no custom parallelism cap; `fail-fast: false` lets every case
 produce evidence. Short pilots do not guarantee every case finishes under a
 minute. Each CLI session has a 120-second timeout inside a six-minute job.
