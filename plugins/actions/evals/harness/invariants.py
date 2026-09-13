@@ -7,7 +7,7 @@ def has(pattern: str, text: str) -> bool:
 
 
 def claims(pattern: str, text: str) -> bool:
-    for clause in re.split(r"(?<=[.!?;])\s+|\n|\b(?:but|however|and)\b", text):
+    for clause in re.split(r"(?<=[.!?;])\s+|[,\n]|\b(?:but|however|and)\b", text):
         for match in re.finditer(pattern, clause, re.IGNORECASE):
             assertion = re.sub(r"^no\s+", "", match.group(), flags=re.IGNORECASE)
             prefix = clause[:match.start()] + assertion
@@ -133,7 +133,11 @@ def case_invariants(case: dict, response: dict) -> dict[str, bool]:
                     r"|(?:no|unknown|unspecified).{0,40}self.hosted.{0,20}rate"
                     r"|self.hosted cost.{0,20}cannot", text
                 ),
-                "reportsCandidateTime": has(r"\b(?:5|five)[ -]minutes?\b|\b300[ -]seconds?\b", text),
+                "reportsCandidateTime": has(
+                    r"\b(?:5|five)[ -]minutes?\b|\b300[ -]seconds?\b"
+                    r"|\bcandidate_reduction_minutes\b['\"]?\s*"
+                    r"(?:(?:value\s+(?:of\s+)?)|[:=]\s*|is\s+)?5\b", text
+                ),
                 "doesNotInventMoney": not claims(
                     r"[$£€]\s*[1-9]\d*(?:\.\d+)?"
                     r"|\b[1-9]\d*(?:\.\d+)?\s*(?:dollars?|USD)\b"
@@ -144,12 +148,14 @@ def case_invariants(case: dict, response: dict) -> dict[str, bool]:
                         rf"\b{job}\b.{{0,50}}\b{durations[key]}\s*(?:seconds?|secs?)\b", text
                     )
                     for job, key in (("hosted", "hosted_minutes"), ("self.hosted", "self_hosted_minutes"))
+                ) and not claims(
+                    r"(?:candidate|reduction|saving).{0,40}\b(?:5|five)[ -](?:seconds?|secs?)\b", text
                 ),
             })
         case "string-environment-concurrency":
             checks.update({
                 "recognizesScalarSyntax": has(r"\b(?:string|scalar|shorthand)\b", text)
-                and has(r"\b(?:valid|supported|accepted|legal|allowed)\b", text),
+                and claims(r"\b(?:valid|supported|accepted|legal|allowed|coherent|consistent)\b", text),
                 "doesNotDemandMappingSyntax": not claims(
                     r"(?:environment|concurrency|schema).{0,35}"
                     r"(?:invalid|must be (?:an? )?(?:object|mapping))", text

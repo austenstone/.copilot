@@ -164,6 +164,43 @@ class InvariantTests(unittest.TestCase):
                 response["findings"].append(claim)
                 self.assertFalse(evaluate(CASES[case_id], response)["doesNotGuaranteePendingOrder"])
 
+    def test_unrelated_config_negation_cannot_hide_a_pending_queue_claim(self):
+        case_id = "string-environment-concurrency"
+        response = gold(case_id)
+        response["findings"] = [
+            "cancel-in-progress is not configured, so it keeps all queued runs.",
+        ]
+        self.assertFalse(evaluate(CASES[case_id], response)["doesNotGuaranteePendingOrder"])
+        response["findings"] = [
+            "cancel-in-progress is not specified, so active runs continue; pending runs can still be replaced.",
+        ]
+        self.assertTrue(evaluate(CASES[case_id], response)["doesNotGuaranteePendingOrder"])
+
+    def test_consistent_scalar_configuration_is_an_equivalent_acceptance(self):
+        case_id = "string-environment-concurrency"
+        response = gold(case_id)
+        response["diagnosis"] = "Both settings use coherent string configuration. No change is warranted."
+        response["recommendation"]["rationale"] = response["diagnosis"]
+        self.assertTrue(all(evaluate(CASES[case_id], response).values()))
+
+    def test_unit_bearing_metadata_citations_preserve_the_numeric_fact(self):
+        case_id = "free-unknown-rate-no-invented-savings"
+        for citation in ("candidate_reduction_minutes: 5", "candidate_reduction_minutes value of 5",
+                         '"candidate_reduction_minutes": 5'):
+            with self.subTest(citation=citation):
+                response = gold(case_id)
+                response["diagnosis"] = response["diagnosis"].replace(
+                    "The candidate reduction is 5 minutes", f"The fixture gives {citation}",
+                )
+                response["recommendation"]["rationale"] = response["diagnosis"]
+                self.assertTrue(all(evaluate(CASES[case_id], response).values()))
+                wrong_value = copy.deepcopy(response)
+                wrong_value["diagnosis"] = wrong_value["diagnosis"].replace(citation, citation.replace("5", "50"))
+                wrong_value["recommendation"]["rationale"] = wrong_value["diagnosis"]
+                self.assertFalse(evaluate(CASES[case_id], wrong_value)["reportsCandidateTime"])
+                response["findings"].append("The candidate reduction is 5 seconds.")
+                self.assertFalse(evaluate(CASES[case_id], response)["keepsMinuteUnits"])
+
     def test_duration_unit_and_cost_near_misses_fail(self):
         case_id = "free-unknown-rate-no-invented-savings"
         for wrong in ("10 seconds", "20 seconds"):
