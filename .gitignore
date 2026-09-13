@@ -7,6 +7,7 @@
 # New files must be added intentionally with `git add -f <path>`.
 !.gitignore
 !README.md
+!install-upstream-skills.sh
 !copilot-instructions.md
 !mcp-config.example.json
 !hooks/

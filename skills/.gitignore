@@ -12,6 +12,12 @@ request-jit/
 thehub-docs-search/
 watch-ci/
 
+# Upstream-owned skills installed with `gh skill`. Keep the injected
+# `metadata.github-*` locally, but never republish these directories.
+docx/
+pptx/
+xlsx/
+
 # Field/sales skills — live in github/austenstone-notes (private), not here.
 actions-dispatch/
 actions-wbr/
