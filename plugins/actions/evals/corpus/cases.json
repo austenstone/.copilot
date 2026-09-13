@@ -7,6 +7,7 @@
       "skills": ["actions-workflow-toolkit"],
       "prompt": "Analyze run 410 attempt 2 and explain the relationship between the available workflow and execution evidence.",
       "evidenceIds": ["CURRENT_WORKFLOW", "RUN_ATTEMPT_2", "ATTEMPT_2_LOG"],
+      "evidenceSources": [{"file": ".github/workflows/ci.yml"}, {"gh": 0}, {"gh": 1}],
       "fixture": {
         "files": {
           ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 30\n    steps:\n      - run: npm test\n",
@@ -46,6 +47,7 @@
       "skills": ["actions-workflow-toolkit"],
       "prompt": "Assess the current state and history of run 420.",
       "evidenceIds": ["RUN_SUMMARY", "ATTEMPT_1", "ATTEMPT_2"],
+      "evidenceSources": [{"gh": 0}, {"gh": 1}, {"gh": 2}],
       "fixture": {
         "files": {
           ".github/workflows/ci.yml": "name: CI\non: pull_request\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm test\n",
@@ -89,6 +91,7 @@
       "skills": ["actions-optimization"],
       "prompt": "Explain why the deploy job is waiting and recommend any warranted action.",
       "evidenceIds": ["DEPLOY_JOB", "PENDING_DEPLOYMENT", "WORKFLOW"],
+      "evidenceSources": [{"gh": 0}, {"gh": 1}, {"file": ".github/workflows/deploy.yml"}],
       "fixture": {
         "files": {
           ".github/workflows/deploy.yml": "name: Deploy\non: workflow_dispatch\njobs:\n  deploy:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: ./deploy.sh\n",
@@ -128,6 +131,7 @@
       "skills": ["actions-workflow-toolkit"],
       "prompt": "Assess the publish job outcome and the overall run result.",
       "evidenceIds": ["WORKFLOW", "RUN_JOBS", "EVENT_PAYLOAD"],
+      "evidenceSources": [{"file": ".github/workflows/publish.yml"}, {"gh": 0}, {"file": "event.json"}],
       "fixture": {
         "files": {
           ".github/workflows/publish.yml": "name: Publish\non: workflow_dispatch\njobs:\n  publish:\n    if: ${{ inputs.release_tag != '' }}\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo publish\n",
@@ -163,6 +167,7 @@
       "skills": ["actions-security-review"],
       "prompt": "Review the security posture of the pull_request_target workflow.",
       "evidenceIds": ["WORKFLOW", "ACTION_PIN"],
+      "evidenceSources": [{"file": ".github/workflows/label.yml"}, {"file": ".github/workflows/label.yml"}],
       "fixture": {
         "files": {
           ".github/workflows/label.yml": "name: Label\non:\n  pull_request_target:\n    types: [opened]\npermissions:\n  contents: read\n  pull-requests: write\njobs:\n  label:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea\n        with:\n          script: |\n            await github.rest.issues.addLabels({ ...context.repo, issue_number: context.issue.number, labels: ['triage'] })\n",
@@ -193,6 +198,7 @@
       "skills": ["actions-security-review"],
       "prompt": "Interpret the scanner result and recommend next steps.",
       "evidenceIds": ["SCANNER_STDERR", "SCANNER_EXIT"],
+      "evidenceSources": [{"file": "zizmor.stderr"}, {"file": "CASE.md"}],
       "fixture": {
         "files": {
           ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo ok\n",
@@ -225,6 +231,7 @@
       "skills": ["actions-workflow-toolkit"],
       "prompt": "Assess run 460 and the evidence needed for diagnosis.",
       "evidenceIds": ["RUN", "JOBS_PAGE_1", "JOBS_PAGE_2", "ATTEMPT_1", "ATTEMPT_2", "ATTEMPT_3"],
+      "evidenceSources": [{"gh": 0}, {"gh": 1}, {"gh": 2}, {"gh": 3}, {"gh": 4}, {"gh": 5}],
       "fixture": {
         "files": {
           ".github/workflows/matrix.yml": "name: Matrix\non: push\njobs:\n  test:\n    strategy:\n      matrix:\n        shard: [1, 2, 3, 4, 5, 6, 7]\n        os: [ubuntu-latest, macos-latest, windows-latest, ubuntu-24.04, ubuntu-22.04, macos-15]\n    runs-on: ${{ matrix.os }}\n    steps:\n      - run: echo ${{ matrix.shard }}\n"
@@ -279,6 +286,7 @@
       "skills": ["actions-optimization"],
       "prompt": "Assess the optimization impact of the hosted and self-hosted jobs.",
       "evidenceIds": ["WORKFLOW", "BILLING_FACTS", "DURATION_FACTS"],
+      "evidenceSources": [{"file": ".github/workflows/ci.yml"}, {"file": "billing.json"}, {"file": "durations.json"}],
       "fixture": {
         "files": {
           ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  hosted:\n    runs-on: ubuntu-latest\n    steps:\n      - run: sleep 10\n  private-runner:\n    runs-on: [self-hosted, linux]\n    steps:\n      - run: sleep 20\n",
@@ -310,6 +318,7 @@
       "skills": ["actions-architecture-review"],
       "prompt": "Review the workflow's environment and concurrency configuration.",
       "evidenceIds": ["WORKFLOW"],
+      "evidenceSources": [{"file": ".github/workflows/deploy.yml"}],
       "fixture": {
         "files": {
           ".github/workflows/deploy.yml": "name: Deploy\non: push\nconcurrency: deploy-production\njobs:\n  deploy:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo deploy\n"
@@ -339,6 +348,7 @@
       "skills": ["actions-architecture-review"],
       "prompt": "Assess the reusable workflow call and available contract evidence.",
       "evidenceIds": ["CALLER", "CALLEE_404"],
+      "evidenceSources": [{"file": ".github/workflows/caller.yml"}, {"gh": 0}],
       "fixture": {
         "files": {
           ".github/workflows/caller.yml": "name: Caller\non: push\njobs:\n  release:\n    uses: octo/private-automation/.github/workflows/release.yml@0123456789abcdef0123456789abcdef01234567\n    with:\n      channel: stable\n    secrets: inherit\n"
@@ -374,6 +384,7 @@
       "skills": ["actions-architecture-review"],
       "prompt": "Assess whether refactoring is warranted and identify relevant behavioral contracts.",
       "evidenceIds": ["SERVICE_A", "SERVICE_B", "SERVICE_C", "REPETITION_FACTS"],
+      "evidenceSources": [{"file": ".github/workflows/service-a.yml"}, {"file": ".github/workflows/service-b.yml"}, {"file": ".github/workflows/service-c.yml"}, {"file": "CASE.md"}],
       "fixture": {
         "files": {
           ".github/workflows/service-a.yml": "name: A\non: workflow_dispatch\npermissions:\n  contents: read\n  packages: write\njobs:\n  release:\n    runs-on: ubuntu-latest\n    environment: production\n    outputs:\n      digest: ${{ steps.build.outputs.digest }}\n    steps:\n      - id: build\n        run: echo digest=aaa >> \"$GITHUB_OUTPUT\"\n",
@@ -406,6 +417,7 @@
       "skills": ["actions-architecture-review", "actions-optimization", "actions-security-review"],
       "prompt": "Review the two-workflow estate and recommend warranted actions.",
       "evidenceIds": ["CI_WORKFLOW", "RELEASE_WORKFLOW", "HEALTH_FACTS"],
+      "evidenceSources": [{"file": ".github/workflows/ci.yml"}, {"file": ".github/workflows/release.yml"}, {"file": "health.json"}],
       "fixture": {
         "files": {
           ".github/workflows/ci.yml": "name: CI\non: pull_request\npermissions:\n  contents: read\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n      - run: npm test\n",

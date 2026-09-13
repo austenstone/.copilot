@@ -35,29 +35,74 @@ python3 -m unittest discover -s plugins/actions/evals/tests -v
 python3 plugins/actions/evals/harness/run_eval.py --dry-run
 ```
 
-## One-case live Actions smoke eval
+## Enabled-only live Actions matrix
 
-[`Actions Copilot smoke eval`](../../../.github/workflows/actions-copilot-smoke.yml)
-runs [`smoke.py`](smoke.py) once on a GitHub-hosted runner. It reuses only the
-public `scanner-hard-failure` fixture files, not the case title or scoring rules.
-The prompt asks whether the captured run establishes a clean scan, with either
-Yes or No followed by an explanation. The single behavioral assertion requires
-the final answer to begin with **No**.
+[`Actions Copilot eval matrix`](../../../.github/workflows/actions-copilot-smoke.yml)
+runs all 12 existing corpus cases, one [`smoke.py`](smoke.py) invocation per
+`ubuntu-slim` matrix job. Model work is remote and these jobs need little local
+CPU. There is no custom parallelism cap; `fail-fast: false` lets every case
+produce evidence. Short pilots do not guarantee every case finishes under a
+minute. Each CLI session has a 120-second timeout inside a six-minute job.
 
-A pass also requires successful CLI completion, positive usage of exactly
-`gpt-5.6-luna`, successful `actions-security-review` **skill-tool activation**
-in native CLI events, and unchanged fixture/plugin files. Package presence or
-skill discovery alone is insufficient. One CLI session may make several model
-requests to load the skill and read evidence; this is not a single API turn.
-The smoke uses fixed GPT-5.6 Luna at low effort for this small repeated task,
-consistent with the [model comparison](https://docs.github.com/en/copilot/reference/ai-models/model-comparison).
-There is no Auto selection or fallback. The manual paired harness below keeps
-its existing Sol Fast default.
+Every case uses exact `gpt-5.6-luna` at low effort, with no Auto selection or
+fallback, consistent with the [model comparison](https://docs.github.com/en/copilot/reference/ai-models/model-comparison).
+The manual paired harness below keeps its existing Sol Fast default.
+Each case must successfully consume its target procedures through native
+**skill-tool calls**, not merely discover their directories. Runtime cases add
+`actions-debug` alongside their corpus-declared toolkit target; together the
+matrix exercises all five skills without changing the manual harness's targets.
+One CLI session may make several model requests to load skills and read evidence.
+
+Only public fixture files and the real plugin manifest/skills enter the agent
+workspace. The prompt contains the task, available files, exact native commands,
+a generic response shape, and neutral evidence IDs (`E1`, `E2`, ...). Case
+IDs/titles, scorer labels/rules, source-to-rubric mappings, and the fake-gh
+response manifest stay outside that workspace and prompt. `evidenceSources` in
+the corpus maps neutral citations back to the existing scorer, including
+deduplication when two labels refer to the same source.
+
+The agent receives only `view`, `skill`, and a shell preapproval for `gh`.
+The existing strict [fake gh](harness/fake_gh.py) is first on its PATH and
+serves only exact fixture commands, with no network fallback. Its optional
+evaluator-owned trace records matched and rejected argument arrays, not response
+fixtures. Successful file-read events and matched fixture commands independently
+prove evidence access, including expected nonzero responses such as the callee
+404. Unrelated instructions, MCPs, general shell commands, edits, URL access,
+remote session export, and parent-directory access are unavailable. Every case
+gets a fresh home and workspace; authentication is stripped from tool subprocesses.
+
+### Assertions and outcomes
+
+A **PASS** requires successful CLI completion, exclusive positive native Luna
+usage, all target skill activations, an unchanged workspace/plugin, valid final
+response structure, actual reads of all catalog sources, only observed
+citations, and no unsupported fixture commands. In addition, **every dimension**
+from the existing [scorer](harness/scoring.py) must equal `1.0`: diagnosis,
+completeness/evidence, abstention, preserved behavior, unauthorized edits, and
+unsupported claims. No average-score threshold hides a failed assertion.
+
+Each case has its own diagnosis, evidence, limitations, expected recommendation,
+and proposal-preservation checks. Valid scalar forms and healthy estates are
+no-change controls; justified extraction requires a proposal preserving the
+contracts. Always answering "No" cannot pass these assertions.
+
+**FAIL** means a skill, response, evidence-access, safety, or scoring assertion
+failed after a valid Luna invocation. **SETUP_BLOCKED** means CLI/runtime,
+authentication/service, native-output, or exact-model verification prevented a
+trustworthy evaluation. Both fail the job. Missing setup artifacts or a job
+timeout also remain a failed job, never an eval pass.
+
+The unchanged scorer uses strict regex patterns, not semantic adjudication.
+Wording differences and negated forbidden phrases can cause false failures:
+inspect the retained answer and dimension scores before attributing a failure
+to model reasoning. Do not weaken assertions, expose expected answers, or reroll
+behavioral failures until green. This matrix is enabled-only, not A/B evidence
+or a general quality/performance benchmark.
 
 The runner probes `command -v copilot`, records `copilot --version` and live
 `--help`, and uses the preinstalled binary when available. Only a missing
 executable triggers the documented `npm install --global @github/copilot`
-fallback. The smoke checks its flags against that runner's help before invoking
+fallback. The runner checks its flags against that runner's help before invoking
 the model. It uses the short-lived built-in `GITHUB_TOKEN` with
 `copilot-requests: write`, as documented in
 [Copilot CLI Actions authentication](https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions).
@@ -67,28 +112,32 @@ The [actionlint configuration](../../../.github/actionlint.yaml) suppresses only
 its outdated unknown-scope diagnostic for this workflow's documented
 `copilot-requests` permission.
 
-The agent gets a fresh home and synthetic workspace, a copy of the real plugin
-manifest and skills, and only `view` and `skill` tools. Unrelated instructions,
-MCPs, shell access, edits, URL tools, and remote session export are unavailable.
-The model invocation has a 120-second timeout inside a six-minute job. A concise
-job summary and three-day artifact retain version/help, native events, stderr,
-usage, and the result, but never the home, logs, or authentication state.
+Each job writes a concise summary and a unique three-day artifact named
+`actions-copilot-smoke-<case-id>`. These retain version/help, native events,
+stderr, usage, command trace, and `result.json` with individual assertions,
+dimension scores, activation evidence, response, and duration. The artifact
+allowlist excludes the home, logs, private fixture manifest, and authentication
+state. Timeout handling retains partial stdout/stderr. Preserve failed evidence.
 
 Execution is restricted to manual runs on `main` or
 `austenstone-actions-copilot-smoke-eval`, plus scoped pushes to that bootstrap
 branch. There are no PR/fork triggers and default unit CI remains independent of
 model credentials. Until the workflow is registered, a scoped branch push starts
-the first run without modifying `main`; afterward it can be dispatched with:
+the first run without modifying `main`. Dispatch supports the full matrix or
+one existing case for an explicitly authorized follow-up:
 
 ```bash
 gh workflow run actions-copilot-smoke.yml --repo austenstone/.copilot \
-  --ref austenstone-actions-copilot-smoke-eval
+  --ref austenstone-actions-copilot-smoke-eval -f case=all
+
+gh workflow run actions-copilot-smoke.yml --repo austenstone/.copilot \
+  --ref austenstone-actions-copilot-smoke-eval -f case=scanner-hard-failure
 ```
 
-The local smoke-assertion tests are deterministic checks, **not live evals**.
-This enabled-only case provides neither A/B comparison nor evidence of general
-procedure uplift. Use the paired harness below only when that larger experiment
-is explicitly requested.
+Local tests cover matrix/dispatch membership, unique artifact naming, case
+validation, oracle isolation, evidence consumption, and positive/negative
+assertion controls. These are deterministic checks, **not live evals**. Use the
+paired harness below only when that larger experiment is explicitly requested.
 
 ## Paired exact-model runs
 

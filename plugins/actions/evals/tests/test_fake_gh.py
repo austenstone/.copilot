@@ -52,6 +52,16 @@ class FakeGhTests(unittest.TestCase):
         self.assertEqual(0, result.returncode)
         self.assertEqual('{"id":1}\n', result.stdout)
 
+    def test_optional_trace_records_exact_matches_without_copying_responses(self) -> None:
+        trace = SCRATCH_ROOT / "trace.jsonl"
+        self.environment["ACTIONS_EVAL_GH_TRACE"] = str(trace)
+        self.run_fake("api", "repos/octo/synthetic/actions/runs/1")
+        self.run_fake("api", "repos/octo/synthetic/actions/runs/2")
+        records = [json.loads(line) for line in trace.read_text().splitlines()]
+        self.assertEqual([True, False], [record["matched"] for record in records])
+        self.assertEqual(["api", "repos/octo/synthetic/actions/runs/1"], records[0]["argv"])
+        self.assertNotIn("stdout", records[0])
+
     def test_rejects_unsupported_call(self) -> None:
         result = self.run_fake("api", "repos/octo/synthetic/actions/runs/2")
         self.assertEqual(64, result.returncode)

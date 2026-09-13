@@ -1,28 +1,61 @@
-name: Actions Copilot smoke eval
+name: Actions Copilot eval matrix
 
 on:
   workflow_dispatch:
+    inputs:
+      case:
+        description: Existing corpus case, or all 12
+        type: choice
+        default: all
+        options:
+          - all
+          - current-yaml-differs-from-execution
+          - failure-only-earlier-attempt
+          - approval-wait-vs-runner-queue
+          - missing-skipped-required-context
+          - safe-metadata-only-privileged-workflow
+          - scanner-hard-failure
+          - large-run-prior-attempts
+          - free-unknown-rate-no-invented-savings
+          - string-environment-concurrency
+          - unreadable-reusable-callee
+          - justified-extraction-preserves-contracts
+          - healthy-small-estate-unchanged
   push:
     branches: [austenstone-actions-copilot-smoke-eval]
     paths:
       - .github/workflows/actions-copilot-smoke.yml
       - plugins/actions/evals/smoke.py
+      - plugins/actions/evals/corpus/**
+      - plugins/actions/evals/harness/**
       - plugins/actions/skills/**
 
 permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   smoke:
+    name: ${{ matrix.case }}
     if: >-
       github.repository == 'austenstone/.copilot' &&
       (github.ref == 'refs/heads/main' ||
        github.ref == 'refs/heads/austenstone-actions-copilot-smoke-eval')
     runs-on: ubuntu-slim
     timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      matrix:
+        case: >-
+          ${{ fromJSON(inputs.case && inputs.case != 'all' && format('["{0}"]', inputs.case) ||
+          '["current-yaml-differs-from-execution", "failure-only-earlier-attempt",
+          "approval-wait-vs-runner-queue", "missing-skipped-required-context",
+          "safe-metadata-only-privileged-workflow", "scanner-hard-failure",
+          "large-run-prior-attempts", "free-unknown-rate-no-invented-savings",
+          "string-environment-concurrency", "unreadable-reusable-callee",
+          "justified-extraction-preserves-contracts", "healthy-small-estate-unchanged"]') }}
     permissions:
       contents: read
       copilot-requests: write
@@ -51,17 +84,18 @@ jobs:
           copilot --version | tee "$RUNNER_TEMP/actions-smoke/cli-version.txt"
           copilot --help | tee "$RUNNER_TEMP/actions-smoke/cli-help.txt"
 
-      - name: One live Copilot smoke case
+      - name: One live Copilot case
         timeout-minutes: 3
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python3 plugins/actions/evals/smoke.py
+          EVAL_CASE: ${{ matrix.case }}
+        run: python3 plugins/actions/evals/smoke.py --case "$EVAL_CASE"
 
       - name: Preserve smoke evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: actions-copilot-smoke
+          name: actions-copilot-smoke-${{ matrix.case }}
           retention-days: 3
           if-no-files-found: error
           path: |
@@ -71,3 +105,5 @@ jobs:
             ${{ runner.temp }}/actions-smoke/stderr.txt
             ${{ runner.temp }}/actions-smoke/usage.json
             ${{ runner.temp }}/actions-smoke/summary.md
+            ${{ runner.temp }}/actions-smoke/result.json
+            ${{ runner.temp }}/actions-smoke/gh-trace.jsonl

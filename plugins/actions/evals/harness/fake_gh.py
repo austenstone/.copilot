@@ -54,6 +54,10 @@ def main() -> int:
         return 65
 
     rule = next((item for item in rules if tuple(item.get("argv", [])) == argv), None)
+    trace_path = os.environ.get("ACTIONS_EVAL_GH_TRACE")
+    if trace_path:
+        with Path(trace_path).open("a", encoding="utf-8") as trace:
+            trace.write(json.dumps({"argv": argv, "matched": rule is not None}) + "\n")
     if rule is None:
         print(f"fake gh: unsupported call rejected: {list(argv)!r}", file=sys.stderr)
         return 64
