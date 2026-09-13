@@ -1,6 +1,6 @@
 ---
 name: personal-intelligence
-description: Build a personal picture of a person so you can serve them better — interests, taste, background, life. Use for gifts, personalization, recommendations, or researching a contact by name, handle, or email. If no subject is named, figure out who the current user is from any signal on the machine, then investigate them.
+description: "Build a personal picture of a person so you can serve them better: interests, taste, background, and life. Use when: personalizing gifts or recommendations, researching a contact by name, handle, or email, or when user context materially improves the answer. If no subject is named, identify the current user from available signals before investigating."
 ---
 
 # Personal Intelligence
