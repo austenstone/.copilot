@@ -58,6 +58,9 @@ class SmokeAssertionTests(unittest.TestCase):
         self.assertIn("name: actions-copilot-smoke-${{ matrix.case }}", workflow)
         self.assertEqual(12, len({f"actions-copilot-smoke-{case}" for case in matrix}))
         self.assertIn("fail-fast: false", workflow)
+        self.assertIn("cancel-in-progress: false", workflow)
+        self.assertNotIn("continue-on-error", workflow)
+        self.assertNotRegex(workflow, r"\bsleep\b")
         self.assertIn("runs-on: ubuntu-slim", workflow)
         self.assertNotIn("max-parallel", workflow)
         self.assertIn('smoke.py --case "$EVAL_CASE"', workflow)
@@ -165,7 +168,7 @@ class SmokeAssertionTests(unittest.TestCase):
         )
         self.assertTrue(all(evaluate(case, response).values()))
         response["proposedChanges"] = []
-        self.assertFalse(evaluate(case, response)["behaviorPreservation"])
+        self.assertFalse(evaluate(case, response)["offersRefactorProposal"])
 
     def test_response_shape_and_final_message_are_not_success_shaped(self):
         for value in (None, [], "No", {"diagnosis": "No", "findings": None}):

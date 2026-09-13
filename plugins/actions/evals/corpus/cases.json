@@ -282,6 +282,7 @@
     },
     {
       "id": "free-unknown-rate-no-invented-savings",
+      "fixtureRevision": 2,
       "title": "Free and unknown-rate compute has no defensible dollar savings",
       "skills": ["actions-optimization"],
       "prompt": "Assess the optimization impact of the hosted and self-hosted jobs.",
@@ -289,7 +290,7 @@
       "evidenceSources": [{"file": ".github/workflows/ci.yml"}, {"file": "billing.json"}, {"file": "durations.json"}],
       "fixture": {
         "files": {
-          ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  hosted:\n    runs-on: ubuntu-latest\n    steps:\n      - run: sleep 10\n  private-runner:\n    runs-on: [self-hosted, linux]\n    steps:\n      - run: sleep 20\n",
+          ".github/workflows/ci.yml": "name: CI\non: push\npermissions:\n  contents: read\njobs:\n  hosted:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020\n        with:\n          node-version: '24'\n      - run: npm ci\n      - run: npm test\n  private-runner:\n    runs-on: [self-hosted, linux]\n    steps:\n      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020\n        with:\n          node-version: '24'\n      - run: npm ci\n      - run: npm run integration\n",
           "billing.json": "{\"repository_visibility\":\"public\",\"hosted_billed_minutes\":0,\"self_hosted_hourly_rate\":null}\n",
           "durations.json": "{\"hosted_minutes\":10,\"self_hosted_minutes\":20,\"candidate_reduction_minutes\":5}\n"
         },
@@ -413,6 +414,7 @@
     },
     {
       "id": "healthy-small-estate-unchanged",
+      "fixtureRevision": 2,
       "title": "Healthy small workflow estate should remain unchanged",
       "skills": ["actions-architecture-review", "actions-optimization", "actions-security-review"],
       "prompt": "Review the two-workflow estate and recommend warranted actions.",
@@ -420,9 +422,12 @@
       "evidenceSources": [{"file": ".github/workflows/ci.yml"}, {"file": ".github/workflows/release.yml"}, {"file": "health.json"}],
       "fixture": {
         "files": {
-          ".github/workflows/ci.yml": "name: CI\non: pull_request\npermissions:\n  contents: read\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n      - run: npm test\n",
-          ".github/workflows/release.yml": "name: Release\non:\n  push:\n    tags: ['v*']\npermissions:\n  contents: read\n  packages: write\njobs:\n  publish:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: npm publish\n",
-          "health.json": "{\"median_queue_seconds\":4,\"p95_duration_minutes\":7,\"failed_runs_last_30_days\":0,\"monthly_runs\":18}\n"
+          ".github/workflows/ci.yml": "name: CI\non: pull_request\npermissions:\n  contents: read\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020\n        with:\n          node-version: '24'\n      - run: npm ci\n      - run: npm test\n",
+          ".github/workflows/release.yml": "name: Release\non:\n  push:\n    tags: ['v*']\npermissions:\n  contents: read\n  packages: write\njobs:\n  publish:\n    environment: production\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020\n        with:\n          node-version: '24'\n          registry-url: https://npm.pkg.github.com\n      - run: npm ci\n      - run: npm test\n      - run: npm publish\n        env:\n          NODE_AUTH_TOKEN: ${{ github.token }}\n",
+          "health.json": "{\"median_queue_seconds\":4,\"p95_duration_minutes\":7,\"failed_runs_last_30_days\":0,\"monthly_runs\":18}\n",
+          "package.json": "{\"name\":\"@octo/synthetic-package\",\"version\":\"1.0.0\",\"type\":\"module\",\"license\":\"MIT\",\"files\":[\"index.js\"],\"scripts\":{\"test\":\"node --check index.js\"},\"publishConfig\":{\"registry\":\"https://npm.pkg.github.com\"}}\n",
+          "package-lock.json": "{\"name\":\"@octo/synthetic-package\",\"version\":\"1.0.0\",\"lockfileVersion\":3,\"requires\":true,\"packages\":{\"\":{\"name\":\"@octo/synthetic-package\",\"version\":\"1.0.0\",\"license\":\"MIT\"}}}\n",
+          "index.js": "export const health = () => 'ok';\n"
         },
         "ghRules": []
       },

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import hashlib
 import json
 import os
 import shlex
@@ -21,6 +22,7 @@ from run_eval import (
     write_json,
 )
 from scoring import score_response
+from invariants import case_invariants
 
 
 MODEL = "gpt-5.6-luna"
@@ -68,6 +70,7 @@ def build_prompt(case: dict) -> str:
         f"Task: {case['prompt']}",
         f"Available files: {json.dumps(sorted(case['fixture']['files']))}",
         f"Evidence catalog: {json.dumps(catalog)}",
+        "All available files are in scope, including files without catalog IDs.",
         "Use view to read files and bash only for the exact gh commands in the catalog.",
         "gh is fixture-backed. Unsupported commands fail locally; do not work around that boundary.",
         "Do not inspect parent directories, environment variables, or the fixture implementation.",
@@ -169,6 +172,7 @@ def assertions_for(case: dict, response: object, changed_paths: list[str],
     if not assertions["responseShape"]:
         return assertions, None
     assertions["citedEvidenceRead"] = set(response["evidenceUsed"]) <= observed
+    assertions["requiredEvidenceCited"] = {item["id"] for item in catalog} <= set(response["evidenceUsed"])
     normalized = {
         **response,
         "evidenceUsed": [
@@ -176,7 +180,7 @@ def assertions_for(case: dict, response: object, changed_paths: list[str],
         ],
     }
     score = score_response(case, normalized, changed_paths)
-    assertions.update({name: value == 1.0 for name, value in score["dimensions"].items()})
+    assertions.update(case_invariants(case, response))
     return assertions, score
 
 
@@ -186,6 +190,16 @@ def main() -> int:
     parser.add_argument("--case", required=True, choices=sorted(cases))
     case = cases[parser.parse_args().case]
     started = time.monotonic()
+    source_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=PLUGIN_ROOT,
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    provenance = {
+        "sourceCommit": source_commit,
+        "graderSha256": hashlib.sha256((Path(__file__).parent / "harness/invariants.py").read_bytes()).hexdigest(),
+        "fixtureSha256": hashlib.sha256(json.dumps(case["fixture"], sort_keys=True).encode()).hexdigest(),
+        "fixtureRevision": case.get("fixtureRevision", 1),
+    }
     output = Path(os.environ["RUNNER_TEMP"]) / "actions-smoke"
     workspace = materialize_case(case, output)
     before = hash_tree(workspace)
@@ -273,7 +287,8 @@ def main() -> int:
         "caseId": case["id"], "verdict": verdict, "blockers": blockers,
         "model": MODEL, "modelConfirmed": model_ok, "modelEvidence": model_evidence,
         "targetSkills": target_skills(case), "skillEvidence": skill_evidence,
-        "assertions": assertions, "score": score, "response": response,
+        "assertions": assertions, "legacyScore": score, "response": response,
+        "provenance": provenance,
         "observedEvidence": sorted(observed), "changedPaths": changed,
         "cliInvocations": int(not missing), "exitCode": returncode,
         "durationSeconds": round(time.monotonic() - started, 1),
@@ -289,7 +304,8 @@ def main() -> int:
         f"- Consumed skills: `{', '.join(item['name'] for item in skill_evidence) or '(none)'}`.",
         f"- CLI invocations: `{int(not missing)}`; exit: `{returncode}`.",
         f"- Runtime: `{result['durationSeconds']}s`.",
-        "- Enabled-only case; strict regex scoring is not semantic adjudication or an A/B comparison.",
+        f"- Grader/fixture commit: `{source_commit}`; fixture revision: `{provenance['fixtureRevision']}`.",
+        "- Enabled-only case-specific invariants; legacy dimension scores are diagnostic only.",
         "",
         "| Assertion | Result |",
         "|---|---|",

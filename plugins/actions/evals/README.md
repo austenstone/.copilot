@@ -76,15 +76,30 @@ gets a fresh home and workspace; authentication is stripped from tool subprocess
 A **PASS** requires successful CLI completion, exclusive positive native Luna
 usage, all target skill activations, an unchanged workspace/plugin, valid final
 response structure, actual reads of all catalog sources, only observed
-citations, and no unsupported fixture commands. In addition, **every dimension**
-from the existing [scorer](harness/scoring.py) must equal `1.0`: diagnosis,
-completeness/evidence, abstention, preserved behavior, unauthorized edits, and
-unsupported claims. No average-score threshold hides a failed assertion.
+citations of every required catalog source, and no unsupported fixture commands.
+The [case-specific invariants](harness/invariants.py), not an average score or
+all-perfect legacy dimensions, decide behavioral pass/fail:
 
-Each case has its own diagnosis, evidence, limitations, expected recommendation,
-and proposal-preservation checks. Valid scalar forms and healthy estates are
-no-change controls; justified extraction requires a proposal preserving the
-contracts. Always answering "No" cannot pass these assertions.
+| Case | Required facts or behavior |
+| --- | --- |
+| Executed versus current YAML | Distinguish revisions, identify the test failure, avoid blaming current YAML. |
+| Earlier attempt failure | Separate the failed first attempt from the successful latest attempt. |
+| Approval wait | Identify reviewer/environment approval, not a capacity shortage. |
+| Skipped publish | Identify the missing input and skipped job without claiming publication. |
+| Metadata-only privileged trigger | Recognize metadata work and the untrusted-execution boundary. |
+| Scanner failure | Recognize incomplete analysis and withhold clean/security assurance. |
+| Large run | Account for 42 jobs, the attempt history, and both observed pages. |
+| Free/unknown-rate compute | Preserve sample time units, zero hosted billing, and unknown rates; invent no money. |
+| Scalar configuration | Accept scalar syntax and never guarantee preservation/order of pending runs. |
+| Inaccessible callee | Respect the retrieval boundary and withhold contract assurance. |
+| Extraction | Propose reuse while explicitly preserving all required contracts. |
+| Healthy estate | Recognize healthy evidence without proposing unsupported changes. |
+
+An `investigate` recommendation with no proposed edits is not itself a workflow
+change. Unsafe recommendations still fail. Extraction checks use the existing
+structured `proposedChanges[].preserves` lists: mentioning secrets elsewhere
+does not demonstrate preserving the secret contract. No new answer envelope or
+model-based judge is used. Always answering "No" cannot pass the suite.
 
 **FAIL** means a skill, response, evidence-access, safety, or scoring assertion
 failed after a valid Luna invocation. **SETUP_BLOCKED** means CLI/runtime,
@@ -92,12 +107,34 @@ authentication/service, native-output, or exact-model verification prevented a
 trustworthy evaluation. Both fail the job. Missing setup artifacts or a job
 timeout also remain a failed job, never an eval pass.
 
-The unchanged scorer uses strict regex patterns, not semantic adjudication.
-Wording differences and negated forbidden phrases can cause false failures:
-inspect the retained answer and dimension scores before attributing a failure
-to model reasoning. Do not weaken assertions, expose expected answers, or reroll
-behavioral failures until green. This matrix is enabled-only, not A/B evidence
-or a general quality/performance benchmark.
+The original [paired scorer](harness/scoring.py) remains unchanged. Its
+`legacyScore` is diagnostic only in matrix results. The revised checks are
+bounded English fact/invariant checks, not exhaustive semantic adjudication:
+unrecognized paraphrases or claims outside their coverage still need inspection.
+Independent gold paraphrases and contradictory near misses cover clean-scan
+assurance, pending-run ordering, time units, invented costs, required secret
+contracts, and unsafe changes. Do not expose expected values, skip failed gates,
+or reroll behavioral failures until green.
+
+### Fixture revisions and offline regrading
+
+Two fixtures are now revision **2**. The billing workflow uses checked-out,
+Node-configured `npm` test/integration steps instead of dummy waits; its sample
+durations remain explicitly in `durations.json`, not executable command
+arguments. The healthy-estate workflows now include checkout, Node setup,
+dependency installation, a package/lockfile/source, and scoped GitHub Packages
+authentication. That repairs a genuinely incomplete original no-change control.
+These workflow examples are still only read, never executed by the evaluation.
+There are no artificial delays, retry loops, or spin waits in the runner/workflow.
+
+Results record the exact grader/fixture source commit, grader hash, fixture hash,
+and fixture revision. Old responses can be passed to `assertions_for` locally
+using the original case definition and saved access/activation evidence. Label
+that **offline regrading**, write it to a separate artifact, and preserve all
+original verdicts and files. A replay does not acquire new model evidence or
+retroactively make an old answer a response to a revised fixture. The original
+0/12 run is unchanged. This matrix is enabled-only, not A/B evidence or a
+general quality/performance benchmark.
 
 The runner probes `command -v copilot`, records `copilot --version` and live
 `--help`, and uses the preinstalled binary when available. Only a missing
@@ -115,7 +152,7 @@ its outdated unknown-scope diagnostic for this workflow's documented
 Each job writes a concise summary and a unique three-day artifact named
 `actions-copilot-smoke-<case-id>`. These retain version/help, native events,
 stderr, usage, command trace, and `result.json` with individual assertions,
-dimension scores, activation evidence, response, and duration. The artifact
+diagnostic legacy scores, provenance, activation evidence, response, and duration. The artifact
 allowlist excludes the home, logs, private fixture manifest, and authentication
 state. Timeout handling retains partial stdout/stderr. Preserve failed evidence.
 
@@ -136,7 +173,8 @@ gh workflow run actions-copilot-smoke.yml --repo austenstone/.copilot \
 
 Local tests cover matrix/dispatch membership, unique artifact naming, case
 validation, oracle isolation, evidence consumption, and positive/negative
-assertion controls. These are deterministic checks, **not live evals**. Use the
+assertion controls, and the absence of delay commands in current fixtures.
+These are deterministic checks, **not live evals**. Use the
 paired harness below only when that larger experiment is explicitly requested.
 
 ## Paired exact-model runs
