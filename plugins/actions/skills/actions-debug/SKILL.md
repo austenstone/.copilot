@@ -5,8 +5,8 @@ description: "Diagnoses GitHub.com Actions workflows or jobs that are absent, wa
 
 # Actions Debug
 
-Load [`actions-workflow-toolkit`](../actions-workflow-toolkit/SKILL.md) for the
-helper contract, exact commands, reusable contracts, and live docs.
+Use [`actions-workflow-toolkit`](../actions-workflow-toolkit/SKILL.md) for
+native commands, reusable contracts, and live docs as needed.
 
 ## Authority and mode
 
@@ -22,15 +22,18 @@ runtime cause from YAML alone.
 ## Pin the incident
 
 Use the exact repository, run ID, and attempt. If the request gives a run URL,
-parse those values from it. Do not default to the latest run or latest attempt.
+parse those values from it. If the URL omits the attempt, inspect run metadata
+and state the selected attempt. Do not silently substitute the latest run.
 
 Collect with:
 
 ```bash
-TOOLKIT=/path/to/actions-workflow-toolkit
-python3 "$TOOLKIT/scripts/collect-run-data.py" \
-  --repository OWNER/REPO --run-id RUN_ID --attempt ATTEMPT --pretty
+gh api repos/OWNER/REPO/actions/runs/RUN_ID/attempts/ATTEMPT
+gh api repos/OWNER/REPO/actions/runs/RUN_ID/attempts/ATTEMPT/jobs --paginate
 ```
+
+Fetch relevant failed logs only when needed, using the toolkit's
+[native-tool procedure](../actions-workflow-toolkit/references/tools.md#exact-run-attempt).
 
 Minimum runtime evidence:
 

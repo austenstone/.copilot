@@ -10,8 +10,8 @@ Load [`../actions-workflow-toolkit/SKILL.md`](../actions-workflow-toolkit/SKILL.
 ## Procedure
 
 1. **Bound the estate.** Record repository, organization, or repository-manifest scope and caller-provided limits. Do not infer a wider scope.
-2. **Inventory.** Run `inventory-workflows.py` as shown in [`references/inventory-and-classification.md`](references/inventory-and-classification.md). Preserve its coverage state, diagnostics, pinned-ref evidence, caller-coverage limits, and inaccessible-callee ambiguity.
-3. **Validate.** Run the toolkit scanners against directly reviewed workflows. Scanner floods may indicate a duplicated platform pattern, but findings are not proof of duplication.
+2. **Inventory.** List and read workflows with native `gh` commands from [`references/inventory-and-classification.md`](references/inventory-and-classification.md). Record examined files/refs, limits, and inaccessible callees.
+3. **Validate.** Run `actionlint` and `zizmor` against directly reviewed workflows as appropriate. Scanner floods may indicate a duplicated platform pattern, but findings are not proof of duplication.
 4. **Trace contracts.** Follow reusable calls transitively within the requested depth using the toolkit's [`reusable-contracts.md`](../actions-workflow-toolkit/references/reusable-contracts.md). At every edge compare inputs, secrets, outputs, permissions, environment, concurrency, runner choice, and ref pinning. A pinned first edge does not pin a nested edge.
 5. **Classify.** Choose `healthy`, `monolith`, `sprawl`, `monorepo-blast-radius`, `mixed`, or `inconclusive`. Partial inventory can support a scoped finding; it cannot prove estate-wide absence.
 6. **Decide once.** Make one architecture decision with the strongest consequence and evidence. Do not return a platform wish list. Use [`references/decision-matrices.md`](references/decision-matrices.md) and say “leave it alone” when healthy.
@@ -19,9 +19,9 @@ Load [`../actions-workflow-toolkit/SKILL.md`](../actions-workflow-toolkit/SKILL.
 
 ## Evidence rules
 
-- Canonical hashes establish identical parsed job bodies. Similarity scores only identify review candidates; they do **not** establish semantic equivalence.
+- Repeated text identifies review candidates; compare the actual job contracts before calling workflows equivalent.
 - String and object forms of `environment` and `concurrency` are meaningful. So are permissions, runner labels, outputs, conditions, matrices, services, and timeouts. Do not normalize them away.
-- `403` may mean policy, authorization, or rate limiting. `404` may mean absent or inaccessible. Keep the helper's ambiguity explicit.
+- `403` may mean policy, authorization, or rate limiting. `404` may mean absent or inaccessible. Keep that ambiguity explicit.
 - Incoming caller discovery covers only examined workflow files. Dynamic references, callers outside scope, and bounded or inaccessible repositories remain unknown.
 - For `A > B > C`, inspect every edge. Inputs and outputs need mapping at each boundary; secrets pass only to the next workflow; permissions cannot be assumed to increase; environments and runners are chosen where the job is defined; each remote `@ref` has its own drift risk.
 

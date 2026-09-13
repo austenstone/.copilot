@@ -1,7 +1,8 @@
 # Actions Agent Plugin
 
 Five GitHub Actions skills for runtime diagnosis, security, performance, and
-estate design, backed by deterministic tooling instead of vibes.
+estate design. They teach agents how to use `gh`, `actionlint`, and `zizmor`
+directly, with focused procedures for the mistakes those tools do not prevent.
 
 This directory is the canonical source. It is a self-contained [Agent Plugins 1.0](https://agent-plugins.org/) package with real files under the required `skills/` location. The specification rejects package paths that resolve outside the plugin root, so the package does not use symlinks to the repository's top-level skills.
 
@@ -33,13 +34,13 @@ cp -R .copilot/plugins/actions/skills/actions-workflow-toolkit ~/.copilot/skills
 
 Every callable skill loads the toolkit, so copy `actions-workflow-toolkit`
 alongside `actions-debug`, `actions-security-review`, `actions-optimization`,
-or `actions-architecture-review`. The toolkit contains its runtime helpers and
-contract, so this copy path does not depend on files at the plugin root.
+or `actions-architecture-review`. The toolkit contains shared references,
+so this copy path does not depend on files at the plugin root.
 
 ## Skills
 
 ```text
-actions-workflow-toolkit          shared procedures and portable helpers
+actions-workflow-toolkit          native-tool procedures and shared references
 ├── actions-debug                 absent, waiting, queued, skipped, and failed runs
 ├── actions-security-review       injection, triggers, pinning, permissions
 ├── actions-optimization          queue, execution, reruns, minutes, and cost
@@ -48,35 +49,31 @@ actions-workflow-toolkit          shared procedures and portable helpers
 
 | Skill | Use when |
 | --- | --- |
-| [`actions-workflow-toolkit`](skills/actions-workflow-toolkit/SKILL.md) | Collecting bounded workflow, run-attempt, or estate evidence with the shared helper contract. |
+| [`actions-workflow-toolkit`](skills/actions-workflow-toolkit/SKILL.md) | Using native tools, interpreting run-attempt evidence, tracing reusable contracts, or checking Actions documentation. |
 | [`actions-debug`](skills/actions-debug/SKILL.md) | Diagnosing why a workflow or job is absent, waiting, queued, skipped, failed, cancelled, or timed out. |
 | [`actions-security-review`](skills/actions-security-review/SKILL.md) | Auditing workflow security, privileged triggers, token permissions, action pinning, secrets, or OIDC boundaries. |
 | [`actions-optimization`](skills/actions-optimization/SKILL.md) | Reducing CI latency or cost, diagnosing queue time and reruns, or tuning runners, caches, matrices, and triggers. |
 | [`actions-architecture-review`](skills/actions-architecture-review/SKILL.md) | Reviewing reusable workflow boundaries, duplicated CI, monorepo design, migrations, or governance. |
 
-## Runtime dependencies
+## Tools
 
 The skills never install tools or dependencies.
 
 | Capability | Required |
 | --- | --- |
-| All helpers | Python 3 |
 | Local correctness scanning | [`actionlint`](https://github.com/rhysd/actionlint) |
 | Security scanning | [`zizmor`](https://docs.zizmor.sh/) |
 | Shell analysis inside `run:` blocks | [`shellcheck`](https://www.shellcheck.net/) (optional but reported when unavailable) |
-| Run-attempt and estate collection | Authenticated [`gh`](https://cli.github.com/) access to GitHub.com |
-| Estate YAML parsing | [`PyYAML`](https://pyyaml.org/) |
+| Remote repository, run-attempt, and estate reads | Authenticated [`gh`](https://cli.github.com/) access to GitHub.com |
 
-Remote scanner network audits require an existing `GH_TOKEN` or
-`GITHUB_TOKEN`. Missing tools, authentication, inaccessible inputs, timeouts,
-and degraded scans are explicit results, never silently installed or reported
-as clean.
+Use only the tools needed for the request. Local validation does not require
+`gh` authentication. Authenticated zizmor network audits use an existing
+`GH_TOKEN` or `GITHUB_TOKEN`; report missing access or skipped audits.
 
-The helpers live under
-[`skills/actions-workflow-toolkit/scripts/`](skills/actions-workflow-toolkit/scripts/)
-and emit the versioned
-[`actions-helper/v1` envelope](skills/actions-workflow-toolkit/references/helper-contract.md)
-to stdout by default. They never execute retrieved workflow files.
+There are no bundled runtime wrappers, Python runtime dependency, or custom
+tool-output schema. The [tooling procedures](skills/actions-workflow-toolkit/references/tools.md)
+explain native exit codes, pagination, exact attempts/refs, and evidence gaps.
+Retrieved workflow code is never executed during review.
 
 ## Why both actionlint and zizmor
 
@@ -93,14 +90,14 @@ Install the tools through their documented package:
 ```bash
 brew install actionlint shellcheck
 brew install zizmor
-python3 -m pip install PyYAML
 ```
 
-Install dependencies before using the corresponding helper. The helpers
-themselves do not run these commands.
+Install only the tools needed for your task. The skills do not run setup
+commands automatically.
 
 ## Development
 
+Development validators use Python 3 and PyYAML for frontmatter checks.
 Run these commands from this directory:
 
 ```bash
@@ -112,7 +109,8 @@ python3 scripts/check-recipes.py
 ./scripts/check-urls.sh
 ./scripts/check-audit-idents.sh
 ./scripts/check-action-refs.sh
-./scripts/check-helpers.sh
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m unittest discover -s evals/tests -p 'test_*.py'
 ./test-corpus/verify.sh
 ```
 

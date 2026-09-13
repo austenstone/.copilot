@@ -82,17 +82,14 @@ class HarnessTests(unittest.TestCase):
         self.assertIn("--plugin-dir", enabled)
         self.assertNotIn("--plugin-dir", disabled)
 
-    def test_fixture_and_helper_state_are_reproducible(self) -> None:
+    def test_fixture_state_is_reproducible(self) -> None:
         hashes = []
-        helper_hashes = []
         for name in ("a", "b"):
             workspace = SCRATCH_ROOT / name
             workspace.mkdir()
             run_eval.materialize_fixture(self.case, workspace)
-            helper_hashes.append(run_eval.snapshot_helpers(workspace))
             hashes.append(run_eval.hash_tree(workspace))
         self.assertEqual(hashes[0], hashes[1])
-        self.assertEqual(helper_hashes[0], helper_hashes[1])
 
     def test_timeout_with_partial_byte_output_is_recorded(self) -> None:
         artifacts = SCRATCH_ROOT / "timeout-artifacts"
@@ -117,8 +114,6 @@ class HarnessTests(unittest.TestCase):
                 "copilot",
                 "GH_TOKEN",
                 run_eval.PLUGIN_ROOT,
-                run_eval.PLUGIN_ROOT
-                / "skills/actions-workflow-toolkit/scripts",
             )
 
         output = artifacts / "primary" / self.case["id"] / "skill-enabled"
@@ -133,25 +128,16 @@ class HarnessTests(unittest.TestCase):
             (output / "stderr.txt").read_text(encoding="utf-8"),
         )
 
-    def test_primary_overlays_keep_helper_files_identical(self) -> None:
+    def test_primary_overlay_contains_only_enabled_skill_content(self) -> None:
         enabled = SCRATCH_ROOT / "enabled"
         disabled = SCRATCH_ROOT / "disabled"
-        helpers = SCRATCH_ROOT / "frozen-helpers"
-        run_eval.copy_helper_source(helpers)
-        run_eval.create_overlay(self.case, enabled, True, helpers)
-        run_eval.create_overlay(self.case, disabled, False, helpers)
-        relative = Path(".github/skills/actions-workflow-toolkit/scripts")
-        enabled_helpers = (
-            run_eval.hash_tree(enabled / relative)
-            if (enabled / relative).is_dir()
-            else {}
-        )
-        disabled_helpers = (
-            run_eval.hash_tree(disabled / relative)
-            if (disabled / relative).is_dir()
-            else {}
-        )
-        self.assertEqual(enabled_helpers, disabled_helpers)
+        run_eval.create_overlay(self.case, enabled, True)
+        run_eval.create_overlay(self.case, disabled, False)
+        enabled_files = run_eval.hash_tree(enabled)
+        self.assertEqual({}, run_eval.hash_tree(disabled))
+        for name in {*self.case["skills"], "actions-workflow-toolkit"}:
+            self.assertIn(f".github/skills/{name}/SKILL.md", enabled_files)
+        self.assertTrue(all(Path(name).suffix == ".md" for name in enabled_files))
 
     def test_environment_keeps_only_selected_ephemeral_auth(self) -> None:
         workspace = SCRATCH_ROOT / "workspace"
@@ -421,16 +407,14 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(rule.get("exitCode", 0), result.returncode)
         self.assertEqual(baseline, run_eval.hash_tree(workspace))
 
-    def test_pair_parity_blocks_mismatched_helpers(self) -> None:
+    def test_pair_parity_blocks_mismatched_fixtures(self) -> None:
         artifacts = SCRATCH_ROOT / "artifacts"
         results = [
             {
                 "caseId": "case",
                 "comparison": "primary",
                 "variant": "skill-enabled",
-                "helperAvailabilityHash": "a",
-                "overlayHelperAvailabilityHash": "same",
-                "fixtureStateHash": "same",
+                "fixtureStateHash": "a",
                 "advertisedTools": ["bash", "glob", "rg", "skill", "view"],
                 "toolAccessConfirmed": True,
                 "procedureTreatment": {
@@ -444,9 +428,7 @@ class HarnessTests(unittest.TestCase):
                 "caseId": "case",
                 "comparison": "primary",
                 "variant": "skill-disabled",
-                "helperAvailabilityHash": "b",
-                "overlayHelperAvailabilityHash": "same",
-                "fixtureStateHash": "same",
+                "fixtureStateHash": "b",
                 "advertisedTools": ["bash", "glob", "rg", "skill", "view"],
                 "toolAccessConfirmed": True,
                 "procedureTreatment": {
@@ -467,8 +449,6 @@ class HarnessTests(unittest.TestCase):
         common = {
             "caseId": "case",
             "comparison": "primary",
-            "helperAvailabilityHash": "same",
-            "overlayHelperAvailabilityHash": "same",
             "fixtureStateHash": "same",
             "toolAccessConfirmed": True,
             "interpreted": True,
@@ -509,8 +489,6 @@ class HarnessTests(unittest.TestCase):
         common = {
             "caseId": "case",
             "comparison": "primary",
-            "helperAvailabilityHash": "same",
-            "overlayHelperAvailabilityHash": "same",
             "fixtureStateHash": "same",
             "advertisedTools": ["bash", "glob", "rg", "skill", "view"],
             "toolAccessConfirmed": True,

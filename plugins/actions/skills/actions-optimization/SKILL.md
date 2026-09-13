@@ -1,6 +1,6 @@
 ---
 name: actions-optimization
-description: "Makes GitHub Actions workflows faster and cheaper by separating queue delay, execution wall clock, rounded job minutes, rerun waste, and billed cost before proposing a bounded change. Use when: CI is slow, reduce Actions minutes or cost, diagnose queueing or flakes, improve caches, tune matrices, right-size runners, or reduce unnecessary runs. Load actions-workflow-toolkit for helper contracts, scanners, and live documentation links."
+description: "Makes GitHub Actions workflows faster and cheaper by separating queue delay, execution wall clock, rounded job minutes, rerun waste, and billed cost before proposing a bounded change. Use when: CI is slow, reduce Actions minutes or cost, diagnose queueing or flakes, improve caches, tune matrices, right-size runners, or reduce unnecessary runs. Use actions-workflow-toolkit for native commands and live documentation links."
 ---
 
 # Actions Optimization
@@ -27,16 +27,14 @@ Use this order and stop when the question is answered:
 3. One or more exact run attempts for job/step timing:
 
    ```bash
-   python3 ../actions-workflow-toolkit/scripts/collect-run-data.py \
-     --repository OWNER/REPO --run-id RUN_ID --attempt ATTEMPT --pretty
+   gh api repos/OWNER/REPO/actions/runs/RUN_ID/attempts/ATTEMPT
+   gh api repos/OWNER/REPO/actions/runs/RUN_ID/attempts/ATTEMPT/jobs --paginate
    ```
 
-   Omit `--attempt` only when "latest attempt" is intentional; use
-   `--all-attempts --max-attempts N` for the latest bounded repeated-attempt
-   range. Logs are not fetched by default. Probe only named jobs with repeated
-   `--log-job-id ID` options.
-   Check per-attempt `coverage`, `total_count`, counted/reused IDs, and
-   provenance before using the result. A bounded run sample is **Sampled**
+   Select a bounded set of attempts explicitly. Check `total_count` and
+   returned job IDs; identify jobs reused across attempts before calculating
+   totals. Fetch only relevant logs when timing metadata cannot answer the
+   question. A bounded run sample is **Sampled**
    evidence, not frequency, usage, or invoice truth.
 
 4. Static workflow inspection only when the question depends on configuration.

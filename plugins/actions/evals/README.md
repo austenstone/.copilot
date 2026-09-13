@@ -32,7 +32,6 @@ No model authentication is needed:
 
 ```bash
 python3 -m unittest discover -s plugins/actions/evals/tests -v
-python3 -m unittest discover -s plugins/actions/tests -p test_evals.py -v
 python3 plugins/actions/evals/harness/run_eval.py --dry-run
 ```
 
@@ -57,18 +56,20 @@ fallback. Each enabled/disabled pair gets:
 - the same explicit variadic `bash view rg glob skill` tool whitelist and
   permission flags;
 - the same strict fake `gh`;
-- the same neutral helper snapshot and recorded helper hash;
 - custom instructions and built-in MCPs disabled;
 - `ask_user`, Bash environment loading, temporary-directory access, and remote
   export disabled; and
 - JSONL output plus separate usage JSON.
 
-`primary` compares a case-targeted skill overlay against an empty overlay while
-keeping helper availability identical. `full-package` is separately labelled
+`primary` compares a case-targeted skill overlay against an empty overlay with
+identical fixtures and tool access. `full-package` is separately labelled
 and compares a package snapshot against no package. Use `--comparison all` to
 run all 12 cases in both comparisons. Comparison and enabled/disabled labels
 are recorded in artifacts but never included in the model prompt, keeping
 treatment assignment blind.
+
+The scenarios use native `gh` command fixtures and captured scanner output.
+Neither arm receives a runtime wrapper or a custom tool-output schema.
 
 Every prompt asks the agent to invoke the case's relevant Actions procedures
 through the supported `skill` tool when available. The harness records
@@ -88,6 +89,10 @@ The prior 48-run artifact at `actions-evals-full-20260912` is invalid for
 diagnostic or procedure-uplift conclusions: its prompts exposed rubric-derived
 vocabulary and procedure consumption was not verified. It may be retained only
 as harness-debugging history.
+
+The corrected `actions-evals-corrected-20260912` comparison predates removal
+of the runtime wrappers. Its scores do not establish effectiveness of the
+current native-tool procedures; a fresh comparison is needed for that claim.
 
 The fake `gh` accepts only exact argument arrays declared by the case. Unknown
 calls, write methods, workflow dispatches, reruns, cancellations, deletions,

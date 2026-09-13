@@ -74,40 +74,8 @@ def materialize_fixture(case: dict[str, Any], workspace: Path) -> None:
     gh_path.chmod(gh_path.stat().st_mode | stat.S_IXUSR)
 
 
-def copy_helper_source(destination: Path) -> None:
-    source = PLUGIN_ROOT / "skills" / "actions-workflow-toolkit" / "scripts"
-    destination.mkdir()
-    if source.is_dir():
-        shutil.copytree(
-            source,
-            destination,
-            dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
-        )
-
-
-def snapshot_helpers(workspace: Path, source: Path | None = None) -> str:
-    destination = workspace / "actions-helpers"
-    destination.mkdir()
-    helper_source = source or (
-        PLUGIN_ROOT / "skills" / "actions-workflow-toolkit" / "scripts"
-    )
-    if helper_source.is_dir():
-        shutil.copytree(
-            helper_source,
-            destination,
-            dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
-        )
-    manifest = hash_tree(destination)
-    write_json(destination / "availability.json", {"files": manifest})
-    return hashlib.sha256(
-        json.dumps(manifest, sort_keys=True).encode("utf-8")
-    ).hexdigest()
-
-
 def snapshot_package(destination: Path) -> None:
-    ignored = shutil.ignore_patterns("evals", "test-corpus", "__pycache__", "*.pyc")
+    ignored = shutil.ignore_patterns("evals", "tests", "test-corpus", "__pycache__", "*.pyc")
     shutil.copytree(PLUGIN_ROOT, destination, ignore=ignored)
 
 
@@ -115,22 +83,11 @@ def create_overlay(
     case: dict[str, Any],
     destination: Path,
     enabled: bool,
-    helper_source: Path | None = None,
     skill_source: Path | None = None,
 ) -> None:
     skills_root = destination / ".github" / "skills"
     skills_root.mkdir(parents=True)
     toolkit = "actions-workflow-toolkit"
-    neutral_helpers = helper_source or (
-        PLUGIN_ROOT / "skills" / toolkit / "scripts"
-    )
-    if neutral_helpers.is_dir():
-        shutil.copytree(
-            neutral_helpers,
-            skills_root / toolkit / "scripts",
-            dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
-        )
     if not enabled:
         return
     skills_source = skill_source or (PLUGIN_ROOT / "skills")
@@ -140,14 +97,14 @@ def create_overlay(
             source,
             skills_root / skill_name,
             dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("scripts"),
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
     if toolkit not in case["skills"]:
         shutil.copytree(
             skills_source / toolkit,
             skills_root / toolkit,
             dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("scripts"),
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
 
 
@@ -476,7 +433,6 @@ def run_variant(
     copilot: str,
     auth_variable: str,
     package_snapshot: Path,
-    helper_snapshot: Path,
 ) -> dict[str, Any]:
     output_dir = artifacts / comparison / case["id"] / variant
     workspace = output_dir / "workspace"
@@ -487,18 +443,9 @@ def run_variant(
         case,
         overlay,
         comparison == "primary" and variant == "skill-enabled",
-        helper_snapshot,
         package_snapshot / "skills",
     )
-    overlay_helpers = overlay / ".github" / "skills" / "actions-workflow-toolkit" / "scripts"
-    overlay_helper_hash = hashlib.sha256(
-        json.dumps(
-            hash_tree(overlay_helpers) if overlay_helpers.is_dir() else {},
-            sort_keys=True,
-        ).encode("utf-8")
-    ).hexdigest()
     materialize_fixture(case, workspace)
-    helper_hash = snapshot_helpers(workspace, helper_snapshot)
     procedure_records = procedure_content_records(case, package_snapshot / "skills")
     baseline = hash_tree(workspace)
     fixture_state_hash = hashlib.sha256(
@@ -525,8 +472,6 @@ def run_variant(
             "variant": variant,
             "workspaceHash": baseline,
             "fixtureStateHash": fixture_state_hash,
-            "helperAvailabilityHash": helper_hash,
-            "overlayHelperAvailabilityHash": overlay_helper_hash,
             "procedureContent": procedure_records,
             "promptHash": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
             "toolWhitelist": TOOL_WHITELIST,
@@ -608,8 +553,6 @@ def run_variant(
         "interpreted": interpreted,
         "changedPaths": changed_paths,
         "procedureTreatment": treatment,
-        "helperAvailabilityHash": helper_hash,
-        "overlayHelperAvailabilityHash": overlay_helper_hash,
         "fixtureStateHash": fixture_state_hash,
     }
     if interpreted and response is not None:
@@ -637,11 +580,6 @@ def enforce_pair_parity(results: list[dict[str, Any]], artifacts: Path) -> None:
         ]
         parity = (
             len(pair) == len(VARIANTS)
-            and len({result["helperAvailabilityHash"] for result in pair}) == 1
-            and len(
-                {result["overlayHelperAvailabilityHash"] for result in pair}
-            )
-            == 1
             and len({result["fixtureStateHash"] for result in pair}) == 1
             and all(result["toolAccessConfirmed"] for result in pair)
             and len({tuple(result["advertisedTools"]) for result in pair}) == 1
@@ -672,8 +610,8 @@ def enforce_pair_parity(results: list[dict[str, Any]], artifacts: Path) -> None:
                 result["interpreted"] = False
                 result.pop("score", None)
                 result["blocker"] = (
-                    "Enabled/disabled fixture state, neutral helper availability, "
-                    "or advertised tool access did not match, so the pair was not "
+                    "Enabled/disabled fixture state or advertised tool access "
+                    "did not match, so the pair was not "
                     "interpreted."
                 )
             write_json(
@@ -894,8 +832,6 @@ def main() -> int:
     artifacts.mkdir(parents=True)
     package_snapshot = artifacts / "package-snapshot"
     snapshot_package(package_snapshot)
-    helper_snapshot = artifacts / "helper-snapshot"
-    copy_helper_source(helper_snapshot)
     results = [
         run_variant(
             case,
@@ -905,7 +841,6 @@ def main() -> int:
             args.copilot,
             auth_variable,
             package_snapshot,
-            helper_snapshot,
         )
         for comparison in comparisons
         for case in selected

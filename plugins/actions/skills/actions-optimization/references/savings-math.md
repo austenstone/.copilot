@@ -16,7 +16,7 @@ Optimization claims need arithmetic. If you cannot measure one input, label the 
 | Input | Source |
 |---|---|
 | Runs per day | Actions Usage Metrics, workflow history, or the repo owner's stated run frequency |
-| Current latency | Actions Performance Metrics or `/jobs` critical-path timing from the toolkit |
+| Current latency | Actions Performance Metrics or the observed execution span of selected-attempt jobs |
 | Candidate latency | Measured test branch run, not guessed |
 | Current rounded job minutes | Actions Usage Metrics, or unique selected-attempt `/jobs` durations with the pricing page's per-job rounding rule |
 | Candidate billable job minutes by runner SKU | Measured test branch run, calculated the same way as current |
@@ -24,7 +24,13 @@ Optimization claims need arithmetic. If you cannot measure one input, label the 
 | Failure rerun count | Performance Metrics failure rate plus run history |
 | Queue time | Performance Metrics |
 
-Do not use deprecated timing responses or public-repo billable fields; the toolkit records those caveats in [`../actions-workflow-toolkit/SKILL.md`](../../actions-workflow-toolkit/SKILL.md#step-3--get-real-performance-data). Use workflow wall-clock for latency, not cost, when jobs run in parallel. Deduplicate by job ID and exclude jobs whose `run_attempt` differs from the selected attempt. Preserve unknown runner labels as unknown: without a verified SKU and live rate, cost is unavailable.
+Do not use deprecated timing responses or public-repo billable fields; see the
+[cost interpretation procedure](../../actions-workflow-toolkit/references/cost-interpretation.md).
+Use workflow wall-clock for latency, not cost, when jobs run in parallel.
+The jobs API does not provide a dependency graph, so its execution span is
+not a reconstructed critical path. Deduplicate by job ID and exclude jobs
+whose `run_attempt` differs from the selected attempt. Preserve unknown
+runner labels as unknown: without a verified SKU and live rate, cost is unavailable.
 
 Do not substitute run `created_at` to `run_started_at` elapsed for queue time.
 That raw interval is provenance, not a capacity metric, and is particularly

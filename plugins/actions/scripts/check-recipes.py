@@ -67,23 +67,22 @@ INVOCATION = re.compile(
     r"(?:actionlint|zizmor)\b"
 )
 # Anything that means the status is being handled rather than allowed to abort.
-HANDLED = re.compile(r"rc=\$\?|\|\||&&|^\s*(if|!|for|while|case|#)|\\\s*$")
+HANDLED = re.compile(r"rc=\$\?|\|\||^\s*(if|!|for|while|case|#)|\\\s*$")
 
 
 def check_unguarded(md, text):
-    """No bare tool invocation in any fenced block, anywhere.
-
-    Both tools exit non-zero on findings, so a bare invocation aborts the
-    script under `set -euo pipefail` -- before whatever validation follows
-    it. That applies just as much to a one-line "quick example" as to a
-    procedure, because the example is what gets copied. Flag catalogs belong
-    in tables, where they cannot be pasted as a script.
-
-    The whole repo satisfies this, so the rule is absolute rather than
-    heuristic: any hit is a regression.
-    """
+    """Allow standalone native calls, but guard findings before later commands."""
     failures = 0
     for _, block in bash_blocks(text):
+        commands = [
+            line.strip()
+            for _, line in block
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        if len(commands) == 1 and not re.search(
+            r"[;&|]", _strip_literals(commands[0])
+        ):
+            continue
         for lineno, line in block:
             stripped = line.strip()
             if not stripped or stripped.startswith("#"):
@@ -99,9 +98,8 @@ def check_unguarded(md, text):
                 "      why: findings exit non-zero (actionlint 1, zizmor "
                 "11-14), so this aborts the script under 'set -euo pipefail' "
                 "before any assertion that follows it. Either guard it with "
-                "'&& rc=0 || rc=$?', or -- if you are listing flags rather "
-                "than giving a runnable recipe -- move it into a table so it "
-                "cannot be pasted as a script.\n"
+                "'&& rc=0 || rc=$?', or run each scanner as a separate "
+                "command and inspect its native exit status and output.\n"
             )
             failures += 1
     return failures

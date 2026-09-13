@@ -192,12 +192,13 @@
       "title": "Scanner hard failure is not a clean scan",
       "skills": ["actions-security-review"],
       "prompt": "Interpret the scanner result and recommend next steps.",
-      "evidenceIds": ["SCANNER_ENVELOPE", "SCANNER_EXIT"],
+      "evidenceIds": ["SCANNER_STDERR", "SCANNER_EXIT"],
       "fixture": {
         "files": {
           ".github/workflows/ci.yml": "name: CI\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo ok\n",
-          "scanner-result.json": "{\"schema_version\":\"actions-helper/v1\",\"tool\":\"scan-workflows\",\"coverage\":{\"status\":\"unavailable\",\"requested\":1,\"examined\":0,\"limitations\":[\"scanner crashed\"]},\"result\":{},\"diagnostics\":[{\"level\":\"error\",\"code\":\"tool_crash\",\"message\":\"synthetic parser crash\"}]}\n",
-          "CASE.md": "The scanner exited 5.\n"
+          "zizmor.stdout": "",
+          "zizmor.stderr": "error: failed to parse .github/workflows/ci.yml; analysis did not complete\n",
+          "CASE.md": "Command: zizmor --format json .github/workflows/ci.yml\nExit status: 1\nSee zizmor.stdout and zizmor.stderr for the captured native output.\n"
         },
         "ghRules": []
       },
@@ -205,7 +206,7 @@
         "must": {
           "diagnosis": ["SCANNER_HARD_FAILURE", "COVERAGE_UNAVAILABLE"],
           "claims": ["SCAN_NOT_CLEAN", "REVIEW_INCOMPLETE"],
-          "evidence": ["SCANNER_ENVELOPE", "SCANNER_EXIT"],
+          "evidence": ["SCANNER_STDERR", "SCANNER_EXIT"],
           "abstentions": ["DO_NOT_REPORT_NO_FINDINGS"]
         },
         "mustNot": {

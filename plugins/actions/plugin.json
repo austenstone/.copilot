@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "actions",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "GitHub Actions diagnosis and review skills for runtime failures, security, optimization, and architecture.",
   "author": {
     "name": "Austen Stone",

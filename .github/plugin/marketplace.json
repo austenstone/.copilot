@@ -12,7 +12,7 @@
     {
       "name": "actions",
       "description": "GitHub Actions diagnosis and review skills for runtime failures, security, optimization, and architecture.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "Austen Stone",
         "url": "https://github.com/austenstone"

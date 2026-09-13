@@ -61,6 +61,14 @@ class CorpusTests(unittest.TestCase):
                     & set(scoring["allowedClaims"])
                 )
 
+    def test_scanner_failure_uses_native_output(self) -> None:
+        case = next(case for case in self.cases if case["id"] == "scanner-hard-failure")
+        files = case["fixture"]["files"]
+        self.assertEqual("", files["zizmor.stdout"])
+        self.assertIn("analysis did not complete", files["zizmor.stderr"])
+        self.assertIn("Exit status: 1", files["CASE.md"])
+        self.assertEqual(["SCANNER_STDERR", "SCANNER_EXIT"], case["evidenceIds"])
+
     def test_gh_rules_are_exact_and_non_mutating(self) -> None:
         forbidden = {
             ("workflow", "run"),

@@ -1,68 +1,60 @@
 # Inventory and classification
 
-Load the toolkit and its [helper contract](../../actions-workflow-toolkit/references/helper-contract.md) first.
-The inventory helper uses the repository's existing PyYAML ecosystem with an
-Actions-safe loader. If PyYAML is unavailable, it returns structured
-`missing_dependency` evidence; do not install dependencies during a review.
+Use native `gh` commands to inspect the agreed scope. Record the repositories,
+workflow paths, refs, and limits examined; no normalized inventory format is
+required.
 
 ## Bounded inventory
 
-Repository:
+For a repository, resolve the requested ref once, then use that returned
+commit SHA for file reads:
 
 ```bash
-python3 ../actions-workflow-toolkit/scripts/inventory-workflows.py \
-  --repository OWNER/REPO \
-  --max-workflows 100 \
-  --max-depth 3 \
-  --max-callees 100 \
-  --max-comparisons 5000 \
-  --pretty
+gh api repos/OWNER/REPO/commits/REF --jq .sha
+gh api --method GET repos/OWNER/REPO/contents/.github/workflows \
+  -f ref=SHA --jq '.[] | [.path, .sha] | @tsv'
+gh api --method GET repos/OWNER/REPO/contents/.github/workflows/ci.yml \
+  -f ref=SHA --jq .content | base64 -d
 ```
 
-Use `--ref REF` only when the requested evidence is at that ref. It is provenance, not proof that runs executed that definition.
+Use the default branch only when that is the intended scope, and state it.
+The commit SHA identifies this source snapshot, not necessarily the workflow
+definition executed by a particular run.
 
-Organization:
+For an organization, agree a repository/workflow budget before listing:
 
 ```bash
-python3 ../actions-workflow-toolkit/scripts/inventory-workflows.py \
-  --organization ORG \
-  --max-repositories 200 \
-  --max-workflows 1000 \
-  --max-depth 3 \
-  --max-callees 500 \
-  --max-comparisons 20000 \
-  --pretty
+gh repo list ORG --limit 50 --json nameWithOwner
 ```
 
-Manifest:
+This is at most 50 visible repositories, not proof of the entire estate.
+Choose a limit appropriate to the request. If given a repository list, use
+only those entries. Stop at the budget and describe unexamined work rather
+than silently expanding the review.
 
-```bash
-python3 ../actions-workflow-toolkit/scripts/inventory-workflows.py \
-  --input repositories.json \
-  --max-repositories 50 \
-  --max-workflows 500 \
-  --pretty
-```
-
-The manifest is a JSON array, `{"repositories": [...]}`, or one `OWNER/REPO[@REF]` per line. Bounds are examples, not defaults to copy blindly. Pick the smallest defensible scope.
-
-## Read coverage before findings
+## Establish coverage before findings
 
 | Evidence | Interpretation |
 |---|---|
-| `coverage.status: complete` | The requested bounded collection completed. It is not proof about callers outside scope. |
-| `partial` | Use collected evidence, but repeat every material limitation in the conclusion. |
-| `unavailable` | Do not make an architecture claim from the inventory. |
-| `rate_limited` | Collection stopped or degraded because GitHub throttled it. |
-| `forbidden_or_rate_limited` | A `403` cannot safely distinguish policy, authorization, or unreported throttling. |
-| `not_found_or_inaccessible` | A `404` cannot safely distinguish absence from hidden content. |
-| caller coverage `scoped` or `limited` | Incoming edges are only calls found in examined workflow files. |
+| All files in the agreed scope inspected | Conclusions apply to that scope, not callers elsewhere. |
+| Budget reached, truncated listing, or failed read | Use collected evidence, but disclose unexamined files and avoid complete totals or absence claims. |
+| Rate-limit response | Stop or defer; do not treat an empty result as no workflows. |
+| `403` | May be policy, authorization, or throttling; inspect the API response. |
+| `404` | May be absent or inaccessible; do not infer deletion. |
+| Incoming caller search | Covers only examined files and visible search results. |
 
-The helper follows reusable calls transitively within all supplied bounds. Each remote edge reports whether its own ref is a full commit SHA. For local `./.github/workflows/...` calls, it resolves one immutable repository SHA and uses it for caller and callee reads. If that resolution is unavailable, the local edge is explicitly unverified and unpinned. An inaccessible callee is evidence of incomplete contract review, not evidence that the callee does not exist.
+Follow reusable calls only as far as needed for the decision and within the
+agreed depth. For local `./.github/workflows/...` calls, read the callee at the
+same resolved commit as the caller. For each remote `@ref`, record whether
+the reference itself is an immutable SHA; resolving a tag today does not pin
+the workflow's future calls. If a callee cannot be read, leave that edge
+unverified. Use the toolkit's
+[contract procedure](../../actions-workflow-toolkit/references/reusable-contracts.md)
+at every edge.
 
 ## Review candidate families
 
-Use exact canonical groups first. For similarity pairs, inspect the original jobs and compare:
+Use repeated steps or text as candidates, then inspect original jobs and compare:
 
 - trigger, condition, matrix, dependencies, runner, services, container, and timeout;
 - string or object `environment` and `concurrency`;
@@ -70,7 +62,9 @@ Use exact canonical groups first. For similarity pairs, inspect the original job
 - inputs, outputs, artifacts, caches, and side effects;
 - action and reusable-workflow refs.
 
-Similarity means “worth comparing.” Never say two jobs are equivalent because their score is high.
+Similarity means “worth comparing,” not semantic equivalence. If using a YAML
+parser, ensure it preserves Actions' `on` key and scalar/list forms; do not
+normalize away meaningful differences or write a custom parser for the review.
 
 ## Classification
 
@@ -90,7 +84,7 @@ File length, duplication, or scanner counts alone do not decide the state.
 For the one recommended decision, record:
 
 1. workflows, jobs, and reusable edges supporting it;
-2. exact versus similarity-only evidence;
+2. verified shared behavior versus text-only similarity;
 3. known callers and caller-coverage limitations;
 4. transitive input, secret, output, permission, environment, concurrency, runner, and ref contracts;
 5. required checks, `merge_group`, and ruleset impact;

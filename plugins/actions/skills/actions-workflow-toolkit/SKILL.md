@@ -1,12 +1,13 @@
 ---
 name: actions-workflow-toolkit
-description: "Shared read-only procedures and portable helpers for evidence-backed GitHub Actions work on GitHub.com. Use when: inspect or validate workflow YAML, collect an exact run attempt, inventory a bounded workflow scope, trace a reusable workflow contract, interpret Actions cost, or find the canonical GitHub documentation for a claim. Load it with actions-debug or a review skill. Excludes standalone diagnosis, broad unsolicited repository scans, workflow mutation, reruns, cancellations, dispatches, approvals, and runner administration."
+description: "Shared procedures for using gh, actionlint, and zizmor directly on GitHub.com Actions. Use when: inspect or validate workflow YAML, inspect an exact run attempt, inventory a bounded workflow scope, trace a reusable workflow contract, interpret Actions cost, or find canonical GitHub documentation. Load relevant references with actions-debug or a review skill. Excludes broad unsolicited scans, workflow mutation, reruns, dispatches, approvals, and runner administration."
 ---
 
 # Actions Workflow Toolkit
 
-This is shared infrastructure, not a standalone report. Pair it with the skill
-that owns the question:
+Use the native tools directly. Read only the references needed for the
+question; there is no runtime wrapper or custom output format to learn.
+Pair these procedures with the skill that owns the question:
 
 - Runtime state or failure: `actions-debug`
 - Security posture: `actions-security-review`
@@ -20,13 +21,13 @@ allowed when access exists. Editing YAML, changing settings, dispatching,
 rerunning, cancelling, approving, enabling, or deleting anything requires
 explicit authority in the current request.
 
-**Full mode** requires a shell and authenticated `gh` access to the exact
-GitHub.com scope. Use the portable helpers and preserve their JSON envelope.
+Use installed `actionlint` and `zizmor` for local scans. Authenticated `gh`
+access is needed only for remote evidence, not local validation. Do not
+install missing tools or initiate login unless authorized.
 
-**Static-only mode** applies when there is no shell, authenticated `gh` is
-unavailable, or the target runtime evidence is inaccessible. Analyze only the
-provided files. Start the answer with `Static-only analysis` and do not claim
-that a run, setting, callee, secret, environment, or runner pool was verified.
+Without runtime access, label conclusions **static-only**. Analyze the files
+and scanner output available, but do not claim that a run, setting, callee,
+secret, environment, or runner pool was verified.
 
 GitHub Enterprise Server and other CI systems are out of scope.
 
@@ -40,40 +41,22 @@ Before collecting data, record only selectors needed by the request:
 - Review: local path or explicit remote ref
 - Inventory: repository/organization/input plus a caller-provided bound
 
-Do not infer an attempt, silently switch to the default branch, or expand a
-single-workflow question into a whole-repository scan.
+If the attempt is unspecified, inspect run metadata and state which attempt
+you selected. Do not silently switch refs or expand a single-workflow
+question into a whole-repository scan.
 
-## Use the portable helpers
+## Native-tool gotchas
 
-The helper interface, envelope, coverage states, and exit behavior are
-authoritative: [`references/helper-contract.md`](references/helper-contract.md).
-Run each helper with `--help` before first use in an unfamiliar checkout.
-
-| Need | Helper |
-|---|---|
-| Validate a local path or exact remote workflow scope | `scripts/scan-workflows.py` |
-| Collect metadata, jobs, steps, and bounded logs for one attempt | `scripts/collect-run-data.py` |
-| Build a bounded workflow inventory | `scripts/inventory-workflows.py` |
-
-Examples:
-
-```bash
-TOOLKIT=/path/to/actions-workflow-toolkit
-python3 "$TOOLKIT/scripts/scan-workflows.py" \
-  --path .github/workflows/ci.yml --pretty
-python3 "$TOOLKIT/scripts/collect-run-data.py" \
-  --repository OWNER/REPO --run-id RUN_ID --attempt ATTEMPT --pretty
-python3 "$TOOLKIT/scripts/inventory-workflows.py" \
-  --repository OWNER/REPO --max-workflows 100 --pretty
-```
-
-Treat `coverage.status`, `coverage.limitations`, `diagnostics`, and
-`provenance` as evidence. Partial, unavailable, timed-out, or inaccessible
-input is never a clean result. Findings use exit `0`; helper execution failures
-use the contract's nonzero exit codes.
-
-If a helper is unavailable, use the bounded direct commands in
-[`references/tools.md`](references/tools.md). State the degraded coverage.
+- Use `gh api --paginate` for job lists. The first page is not the entire run;
+  an attempt-specific endpoint avoids silently mixing reruns.
+- Scanner findings can exit nonzero. Read the native exit status, stdout,
+  and stderr before deciding whether analysis succeeded.
+- A failed, empty, timed-out, inaccessible, or partial scan is not clean.
+  State what was examined and what remains unknown.
+- A run's head SHA is not automatically proof of its executed workflow
+  definition, especially for privileged triggers and reusable workflows.
+- Use the command executor's timeout for long calls and stop when the agreed
+  scope or collection budget is reached.
 
 ## Evidence rules
 
@@ -92,7 +75,7 @@ unavailable. It does not prove a workflow, runner, secret, or setting is absent.
 
 ## Procedures and live sources
 
-- Tool and fallback commands: [`references/tools.md`](references/tools.md)
+- Native commands and result interpretation: [`references/tools.md`](references/tools.md)
 - Canonical GitHub documentation map: [`references/docs-map.md`](references/docs-map.md)
 - Required checks and event semantics: [`references/required-checks-and-events.md`](references/required-checks-and-events.md)
 - Reusable workflow contracts: [`references/reusable-contracts.md`](references/reusable-contracts.md)
@@ -101,13 +84,6 @@ unavailable. It does not prove a workflow, runner, secret, or setting is absent.
 Fetch the linked GitHub page before quoting limits, prices, runner labels,
 retention, or other values that change. Do not copy volatile catalogs into a
 report.
-
-## Step 3 — Get real performance data
-
-For optimization questions, separate queue time, execution time, reruns, and
-billed usage. Start with Actions metrics when available, then use the exact
-attempt's jobs for runner and duration evidence. The calculation and degraded
-cases are in [`references/cost-interpretation.md`](references/cost-interpretation.md).
 
 ## Output and stopping condition
 

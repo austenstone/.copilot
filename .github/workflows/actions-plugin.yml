@@ -60,7 +60,7 @@ jobs:
         run: python3 scripts/check-recipes.py
 
   corpus:
-    name: Test corpus and helpers
+    name: Test corpus and procedures
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -86,16 +86,15 @@ jobs:
       - name: Install zizmor
         run: pipx install "zizmor==${ZIZMOR_VERSION}"
 
-      - name: Install Python test dependency
-        run: python3 -m pip install --quiet PyYAML
-
       - name: Verify fixtures
         env:
           GH_TOKEN: ${{ github.token }}
         run: ./test-corpus/verify.sh
 
-      - name: Shipped helper tests
-        run: ./scripts/check-helpers.sh
+      - name: Procedure and evaluation regressions
+        run: |
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          python3 -m unittest discover -s evals/tests -p 'test_*.py'
 
   self-review:
     name: Workflow self review
