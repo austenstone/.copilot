@@ -318,6 +318,32 @@ class HarnessTests(unittest.TestCase):
         )
         self.assertFalse(run_eval.confirm_model_usage(usage_path)[0])
 
+    def test_model_confirmation_honors_explicit_expected_model(self) -> None:
+        usage_path = SCRATCH_ROOT / "usage.json"
+        model = "gpt-5.6-luna"
+        metrics = {
+            "requests": {"count": 1},
+            "usage": {"inputTokens": 10, "outputTokens": 5},
+        }
+        for models, current, expected in (
+            ({model: metrics}, model, True),
+            ({model: metrics, run_eval.MODEL: metrics}, model, False),
+            ({run_eval.MODEL: metrics}, run_eval.MODEL, False),
+            ({model: metrics}, run_eval.MODEL, False),
+            ({model: {**metrics, "requests": {"count": 0}}}, model, False),
+        ):
+            with self.subTest(models=models, current=current):
+                usage_path.write_text(
+                    json.dumps({"currentModel": current, "modelMetrics": models}),
+                    encoding="utf-8",
+                )
+                self.assertEqual(
+                    expected,
+                    run_eval.confirm_model_usage(usage_path, expected_model=model)[0],
+                )
+                if expected:
+                    self.assertFalse(run_eval.confirm_model_usage(usage_path)[0])
+
     def test_records_discovery_and_successful_skill_consumption(self) -> None:
         transcript = "\n".join(
             (

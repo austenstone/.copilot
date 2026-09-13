@@ -10,9 +10,10 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "harness"))
-from run_eval import MODEL, PLUGIN_ROOT, confirm_model_usage, consumed_skills, hash_tree
+from run_eval import PLUGIN_ROOT, confirm_model_usage, consumed_skills, hash_tree
 
 
+MODEL = "gpt-5.6-luna"
 SKILL = "actions-security-review"
 PROMPT = (
     "Interpret the captured native scanner output in CASE.md, zizmor.stdout, and "
@@ -108,7 +109,7 @@ def main() -> int:
     usage_path = output / "usage.json"
     if usage_path.exists():
         usage_path.write_text(usage_path.read_text().replace(token, "[REDACTED]"))
-    model_ok, model_evidence = confirm_model_usage(usage_path)
+    model_ok, model_evidence = confirm_model_usage(usage_path, expected_model=MODEL)
     skill_evidence = consumed_skills(transcript, [SKILL])
     if returncode == 0:
         try:

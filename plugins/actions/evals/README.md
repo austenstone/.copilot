@@ -45,10 +45,14 @@ Yes or No followed by an explanation. The single behavioral assertion requires
 the final answer to begin with **No**.
 
 A pass also requires successful CLI completion, positive usage of exactly
-`gpt-5.6-sol-fast`, successful `actions-security-review` **skill-tool activation**
+`gpt-5.6-luna`, successful `actions-security-review` **skill-tool activation**
 in native CLI events, and unchanged fixture/plugin files. Package presence or
 skill discovery alone is insufficient. One CLI session may make several model
 requests to load the skill and read evidence; this is not a single API turn.
+The smoke uses fixed GPT-5.6 Luna at low effort for this small repeated task,
+consistent with the [model comparison](https://docs.github.com/en/copilot/reference/ai-models/model-comparison).
+There is no Auto selection or fallback. The manual paired harness below keeps
+its existing Sol Fast default.
 
 The runner probes `command -v copilot`, records `copilot --version` and live
 `--help`, and uses the preinstalled binary when available. Only a missing
@@ -81,7 +85,7 @@ gh workflow run actions-copilot-smoke.yml --repo austenstone/.copilot \
   --ref austenstone-actions-copilot-smoke-eval
 ```
 
-The four local smoke-assertion tests are deterministic checks, **not live evals**.
+The local smoke-assertion tests are deterministic checks, **not live evals**.
 This enabled-only case provides neither A/B comparison nor evidence of general
 procedure uplift. Use the paired harness below only when that larger experiment
 is explicitly requested.

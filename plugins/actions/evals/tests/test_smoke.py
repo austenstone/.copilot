@@ -4,10 +4,13 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from smoke import final_answer, rejects_clean_scan
+from smoke import MODEL, final_answer, rejects_clean_scan
 
 
 class SmokeAssertionTests(unittest.TestCase):
+    def test_smoke_model_is_fixed_to_luna(self):
+        self.assertEqual("gpt-5.6-luna", MODEL)
+
     def test_rejects_clean_scan(self):
         self.assertTrue(rejects_clean_scan("No. Parsing failed before analysis completed."))
 

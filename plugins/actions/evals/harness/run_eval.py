@@ -260,7 +260,9 @@ def extract_response(transcript: str) -> dict[str, Any] | None:
     return None
 
 
-def confirm_model_usage(usage_path: Path) -> tuple[bool, dict[str, Any]]:
+def confirm_model_usage(
+    usage_path: Path, expected_model: str = MODEL
+) -> tuple[bool, dict[str, Any]]:
     if not usage_path.is_file():
         return False, {"reason": "usage file missing"}
     try:
@@ -271,8 +273,8 @@ def confirm_model_usage(usage_path: Path) -> tuple[bool, dict[str, Any]]:
     if not isinstance(model_metrics, dict):
         return False, {"reason": "modelMetrics missing"}
     models = sorted(model_metrics)
-    exact = model_metrics.get(MODEL)
-    if models != [MODEL] or not isinstance(exact, dict):
+    exact = model_metrics.get(expected_model)
+    if models != [expected_model] or not isinstance(exact, dict):
         return False, {"reason": "mixed, fallback, or missing model records", "models": models}
     requests = exact.get("requests", {})
     token_usage = exact.get("usage", {})
@@ -292,7 +294,7 @@ def confirm_model_usage(usage_path: Path) -> tuple[bool, dict[str, Any]]:
         and isinstance(output_tokens, int)
         and output_tokens > 0
     )
-    confirmed = current_model == MODEL and positive
+    confirmed = current_model == expected_model and positive
     return confirmed, {
         "currentModel": current_model,
         "models": models,
