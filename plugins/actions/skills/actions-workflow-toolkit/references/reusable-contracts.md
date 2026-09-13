@@ -64,6 +64,16 @@ scope is intentional and independently verified.
 `secrets: inherit` is still a direct-hop decision and does not prove that a
 named secret exists. Record scope and availability without revealing values.
 
+Before extracting or moving jobs, inventory each applicable credential by
+name or role, source scope, consuming step/job, and current forwarding path.
+Include environment-selected credentials and short-lived token or OIDC
+dependencies, not just `workflow_call.secrets` declarations. Carry each binding
+into the proposed caller/callee contract with its availability conditions.
+Preserve intentional named mappings or inherited boundaries; do not add
+`secrets: inherit`, broaden token permissions, or discard a required credential
+to make the interface simpler. If a binding is not visible, record it as
+unresolved and retain the existing path until it can be verified.
+
 Environment secrets are selected by the callee job's `environment`. A caller
 cannot pass an environment through `on.workflow_call`, and a callee
 environment secret can take precedence over a same-named passed secret.

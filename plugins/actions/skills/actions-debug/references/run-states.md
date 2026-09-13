@@ -87,6 +87,10 @@ Use run/job metadata and concurrency configuration to distinguish:
 - Parent/upstream cancellation propagated to dependent work
 - Shutdown caused by a timeout or platform incident
 
+For a concurrency hold or supersession, identify whether the affected work was
+running or pending using the toolkit's
+[concurrency procedure](../../actions-workflow-toolkit/references/concurrency.md).
+
 Preserve cancellation in any replacement gate. `always()` makes evaluation
 possible; it does not mean the gate should turn cancellation into success.
 

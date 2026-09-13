@@ -20,7 +20,9 @@ Load [`../actions-workflow-toolkit/SKILL.md`](../actions-workflow-toolkit/SKILL.
 ## Evidence rules
 
 - Repeated text identifies review candidates; compare the actual job contracts before calling workflows equivalent.
-- String and object forms of `environment` and `concurrency` are meaningful. So are permissions, runner labels, outputs, conditions, matrices, services, and timeouts. Do not normalize them away.
+- Scalar `environment` and `concurrency` values are valid shorthand, not missing objects. Preserve their meaning when reviewing or refactoring.
+- For deployment concurrency, distinguish **running** cancellation from **pending** replacement. An omitted or false `cancel-in-progress` protects running work, not every pending run; the default pending policy can supersede older pending work. Do not infer retention or ordering from serialization. Apply the toolkit's [concurrency procedure](../actions-workflow-toolkit/references/concurrency.md) before describing queue behavior or proposing a policy change.
+- Preserve permissions, runner labels, outputs, conditions, matrices, services, and timeouts rather than normalizing them away.
 - `403` may mean policy, authorization, or rate limiting. `404` may mean absent or inaccessible. Keep that ambiguity explicit.
 - Incoming caller discovery covers only examined workflow files. Dynamic references, callers outside scope, and bounded or inaccessible repositories remain unknown.
 - For `A > B > C`, inspect every edge. Inputs and outputs need mapping at each boundary; secrets pass only to the next workflow; permissions cannot be assumed to increase; environments and runners are chosen where the job is defined; each remote `@ref` has its own drift risk.
@@ -37,11 +39,27 @@ Before recommending extraction, renaming, path filtering, or event changes, capt
 
 Keep a stable always-running required check during selective monorepo execution. Do not rename or remove checks until branch protection or rulesets are intentionally updated.
 
+For an extraction, turn this inventory into an explicit before/after mapping for
+each changed caller and new callee. Secret and credential flows are interfaces,
+not an implementation detail: include their source scope, consumer, and
+forwarding boundary even when supplied evidence describes them outside the YAML.
+Use the toolkit's [secret and environment tracing](../actions-workflow-toolkit/references/reusable-contracts.md#4-trace-secrets-and-environments).
+If names or bindings are unavailable, preserve the existing boundary and make
+that part of the proposal conditional; do not invent names, expose values, or
+claim compatibility has been verified.
+
 ## Output
 
 Return two layers:
 
 1. **Consequence:** one screen-shareable paragraph.
 2. **Evidence and rollout:** scope and coverage; classification; one decision; exact supporting workflows/edges; affected contracts and consumers; required-check preservation; canary, cohort, default, and rollback signals.
+
+Each refactor proposal must say how its applicable inputs, secret/credential
+forwarding, token permissions, outputs, and environment approvals remain intact.
+Carry those interfaces into the proposed change itself, not only an earlier
+inventory or a generic "preserve contracts" statement. Keep intentional named
+or inherited forwarding unchanged unless a separately justified change is in
+scope; do not substitute `secrets: inherit` for an unresolved mapping.
 
 If coverage cannot support a decision, classify `inconclusive`, state the smallest additional bounded collection needed, and stop. If the estate is small, valid, distinct, and cheap, classify `healthy` and recommend no refactor.

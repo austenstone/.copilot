@@ -78,6 +78,7 @@ unavailable. It does not prove a workflow, runner, secret, or setting is absent.
 - Native commands and result interpretation: [`references/tools.md`](references/tools.md)
 - Canonical GitHub documentation map: [`references/docs-map.md`](references/docs-map.md)
 - Required checks and event semantics: [`references/required-checks-and-events.md`](references/required-checks-and-events.md)
+- Running cancellation and pending replacement: [`references/concurrency.md`](references/concurrency.md)
 - Reusable workflow contracts: [`references/reusable-contracts.md`](references/reusable-contracts.md)
 - Cost interpretation: [`references/cost-interpretation.md`](references/cost-interpretation.md)
 

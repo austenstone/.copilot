@@ -33,6 +33,13 @@ Do not start with a universal platform repo that handles every language and depl
 
 Before the canary, publish a compatibility table for inputs, secrets, outputs, permissions, environments, concurrency, runners, refs, check names, and artifacts. Trace nested calls to the requested bound. Keep the old path available when inaccessible or out-of-scope consumers make the blast radius incomplete.
 
+Show the existing binding, proposed binding, evidence, and any unresolved
+condition for each interface. Apply the toolkit's
+[secret and environment tracing](../../actions-workflow-toolkit/references/reusable-contracts.md#4-trace-secrets-and-environments)
+to credential rows, then carry those rows into each affected caller/callee
+proposal. Similar job structure alone does not establish authentication
+compatibility.
+
 ## C. Monorepo playbook
 
 Goal: run the right checks for the changed graph and still satisfy branch protection.
