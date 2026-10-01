@@ -20,4 +20,5 @@ things you know cold, local codebase or logic work, or any lookup that wouldn't 
 - One source that resolves the question is done. Don't crawl link-to-link to feel thorough.
 - After fetching a page, scan the links it surfaced and ask which actually advance the goal. Follow those, and keep crawling deeper until the worthwhile links are exhausted. Purpose is the test: a link that fills a real gap is worth following, a link that just feels related is not.
 - Prefer synthesized-answer tools over raw fetching; reach for `web_search` first since it's much faster than `gemini_search`. Use news search for fresh articles.
+- Use Exa for semantic retrieval and clean page content when intent and relevance matter more than literal keyword matching, or to read known public URLs. `web_search_exa` requires both a semantically rich `query` and a precise `objective`; use `web_fetch_exa` for known pages. Reserve `agent_run` for genuinely multi-step public-web research, not simple lookups.
 - Spend effort in proportion to the cost of being wrong.
