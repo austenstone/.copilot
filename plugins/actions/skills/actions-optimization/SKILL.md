@@ -1,11 +1,21 @@
 ---
 name: actions-optimization
-description: "Makes GitHub Actions workflows faster and cheaper by separating queue delay, execution wall clock, rounded job minutes, rerun waste, and billed cost before proposing a bounded change. Use when: CI is slow, reduce Actions minutes or cost, diagnose queueing or flakes, improve caches, tune matrices, right-size runners, or reduce unnecessary runs. Use actions-workflow-toolkit for native commands and live documentation links."
+description: "Makes GitHub Actions workflows faster and cheaper by separating queue delay, execution wall clock, rounded job minutes, rerun waste, and billed cost before proposing a bounded change. Use when: CI is slow, reduce Actions minutes or cost, cost optimization checklist for a customer call, diagnose queueing or flakes, improve caches or custom images, tune matrices, right-size runners or move to ARM64/ubuntu-slim, trim artifacts and retention, VNET/NAT cost, budgets and cost centers, or reduce unnecessary runs. Use actions-workflow-toolkit for native commands and live documentation links."
 ---
 
 # Actions Optimization
 
 Load [`actions-workflow-toolkit`](../actions-workflow-toolkit/SKILL.md). Optimize from evidence, not YAML aesthetics.
+
+Aim for the cost-to-performance sweet spot, not the cheapest runner: faster feedback that costs slightly more can be the right answer, so name which goal you are optimizing. Default to GitHub-hosted compute. Priority order: **stop unnecessary work → stop wasted work → right-size compute → speed up what remains → govern so it stays fixed.**
+
+## Modes
+
+| Request | Use |
+|---|---|
+| Diagnose a specific repo, workflow, or run | Sections 1-6 below |
+| Talk a customer through optimization, or "give me a checklist" | [`references/customer-checklist.md`](references/customer-checklist.md), then sections 1-6 for the workflows it surfaces |
+| "What else could we try?" | [`references/optimization-catalog.md`](references/optimization-catalog.md) |
 
 ## 1. Define the question and guardrails
 
@@ -23,7 +33,7 @@ Before changing triggers, job names, matrices, runners, or reusable workflows:
 Use this order and stop when the question is answered:
 
 1. Actions Performance Metrics for queue time, run time, and failure rate.
-2. Actions Usage Metrics or billing export for minutes/cost concentration.
+2. Actions Usage Metrics, billing usage reports/REST, or cost centers for minutes/cost concentration. At enterprise scale, Actions Data Stream (when available) or `workflow_job` webhooks give event-level history; reconcile them with billing before claiming cost.
 3. One or more exact run attempts for job/step timing:
 
    ```bash
@@ -71,10 +81,11 @@ Evidence grades:
 
 1. **Measured queue/job waiting dominates:** investigate runner supply, org concurrency, runner-label scarcity, matrix fan-out, and superseded runs. Do not infer this from run created-to-started elapsed and do not start with cache tuning.
 2. **Failures/reruns dominate:** fix flake, service readiness, dependency fetch instability, isolation, or fail-fast behavior before runtime tuning.
-3. **Runs trigger unnecessarily:** consider safe path/branch filters, monorepo change detection, or PR-only cancellation. Preserve required check contexts and default-branch validation.
-4. **Execution dominates:** use job and step timings to target dependency caching, checkout, Docker layers, test parallelism, runner sizing, matrix shape, or job graph overhead.
+3. **Runs trigger unnecessarily:** consider safe path/branch filters, monorepo change detection, schedule hygiene, reactive triggers instead of polling, or PR-only cancellation. Preserve required check contexts and default-branch validation.
+4. **Execution dominates:** use job and step timings to target fail-fast ordering, dependency caching, custom images, checkout, Docker layers, test parallelism, runner sizing/architecture, matrix shape, or job graph overhead (including per-job rounding).
+5. **Storage or network dominates:** check artifact retention and duplication, cache churn, and private-networking NAT/egress or registry pulls. Some of this cost lands on the customer's cloud bill, not GitHub's.
 
-Detailed branching: [`references/decision-tree.md`](references/decision-tree.md). Exact patterns: [`references/fix-patterns.md`](references/fix-patterns.md).
+Detailed branching: [`references/decision-tree.md`](references/decision-tree.md). Exact patterns: [`references/fix-patterns.md`](references/fix-patterns.md). Full lever menu: [`references/optimization-catalog.md`](references/optimization-catalog.md).
 
 ## 5. Quantify honestly
 
@@ -96,6 +107,7 @@ For runner, cache, trigger, matrix, reusable-workflow, or job-graph changes:
 3. State the observation window and acceptance thresholds before rollout.
 4. Define rollback: missing check/artifact, unsupported platform, cache correctness failure, higher failure rate, cost/run regression, or p95 outside threshold.
 5. Expand only after the canary passes. Shared reusable workflows need a bounded caller cohort and a rollback ref.
+6. Keep it fixed: name an owner for each top-cost workflow, set budgets and alerts by cost center, and review the top-N monthly so regressions don't creep back.
 
 ## Required response
 

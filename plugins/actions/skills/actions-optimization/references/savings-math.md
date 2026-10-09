@@ -83,6 +83,30 @@ latency_speedup = current_latency / candidate_latency
 
 Use measured candidate runtime. A bigger runner can be cheaper, but only if the workload actually parallelizes and reduces rounded billable job minutes enough to beat the rate multiplier.
 
+```text
+runner_efficiency = latency_speedup / rate_multiplier
+```
+
+Above 1 means the candidate buys more speed than it costs. Use it to find the sweet spot across sizes, not only to pick the cheapest.
+
+## A/B protocol
+
+1. Run the same commit about 30 times on each candidate, interleaved in time to avoid capacity bias.
+2. Compare p50 and p90 duration, rounded minutes by SKU, and failure rate. Discard runs that failed for unrelated reasons, and say so.
+3. Report cost per successful run, not cost per attempt.
+4. Grade it **Measured** only for that workload. Don't generalize a percentage to other repos.
+
+## Waste and efficiency metrics
+
+```text
+rounding_tax = sum(rounded_job_minutes) - sum(actual_job_minutes)
+waste_ratio = (failed + cancelled + rerun + no-op rounded minutes) / total rounded minutes
+cost_per_successful_run = period_cost / successful_runs
+cost_per_merged_pr = period_cost / merged_prs
+```
+
+Measure cancellation latency alongside cancellation count: a run cancelled after several minutes still billed those minutes. Per-job cost is derived from minutes and live rates; the APIs do not return it.
+
 ## Two-layer report template
 
 ### Layer 1: screen-share summary
