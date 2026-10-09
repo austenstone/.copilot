@@ -57,6 +57,16 @@ page for every hard number. Fetch it at answer time.
 | Queue time, run time, and failure-rate dashboards | [View Actions metrics](https://docs.github.com/en/actions/how-tos/administer/view-metrics) |
 | Current runner prices and billing units | [Actions runner pricing](https://docs.github.com/en/billing/reference/actions-runner-pricing) |
 | Included usage, storage, and billing ownership | [Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions) |
+| Custom images for larger runners | [Use custom images](https://docs.github.com/en/actions/how-tos/manage-runners/larger-runners/use-custom-images) |
+| Private networking for hosted runners | [Azure private networking](https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/about-azure-private-networking-for-github-hosted-runners-in-your-enterprise) |
+| Artifact upload, download, and retention | [Store and share data](https://docs.github.com/en/actions/tutorials/store-and-share-data) |
+| Artifact inventory and deletion | [Artifacts REST API](https://docs.github.com/en/rest/actions/artifacts) |
+| Cache inventory and deletion | [Manage caches](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manage-caches), [Cache REST API](https://docs.github.com/en/rest/actions/cache) |
+| Path-filter diff limits and skipped workflows | [Troubleshoot workflows](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows), [Skip workflow runs](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs) |
+| Billed usage by SKU, repository, and cost center | [Usage reports](https://docs.github.com/en/billing/reference/usage-reports), [Billing usage REST API](https://docs.github.com/en/rest/billing/usage) |
+| Spend attribution and alerts | [Cost centers](https://docs.github.com/en/billing/concepts/cost-centers), [Set up budgets](https://docs.github.com/en/billing/how-tos/set-up-budgets) |
+| Event-level workflow and job history | [Webhook payloads](https://docs.github.com/en/webhooks/webhook-events-and-payloads); Actions Data Stream [roadmap item](https://github.com/github/roadmap/issues/1193) |
+| CI design guidance (fail fast, job graph, caching, metrics) | [Well-Architected: Effective CI](https://learn.github.com/well-architected/productivity/recommendations/effective-ci) |
 
 ## Measurement and troubleshooting
 

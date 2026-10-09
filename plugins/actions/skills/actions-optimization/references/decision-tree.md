@@ -76,6 +76,11 @@ Recommended levers:
 | Docs-only changes run full CI | Prefer an always-created workflow with internal change detection | Use the canonical stable gate so skip is accepted only when detection explicitly proves no work |
 | Monorepo package builds all packages | Generate a dynamic matrix with changed packages | Keep global integration tests if they protect shared contracts |
 | Heavy workflow runs on every push and PR | Narrow triggers or add concurrency | Do not skip default branch validation |
+| Cron runs hourly, nightly, or on weekends with little new input | Weekday working-hours or off-the-hour schedule, or a reactive trigger | Keep schedules that guard security or release freshness |
+| Job loops and sleeps waiting for an external system | Trigger on `workflow_run`, `repository_dispatch`, or a webhook | Polling bills every waiting minute |
+| `pull_request` fires on labels, edits, or assignments | Restrict `types:` | Keep the activity types required checks rely on |
+
+Path filters have documented diff limits: some very large pushes always run, and only a bounded window of changed files is evaluated. Check [troubleshooting workflows](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows) before trusting a filter to skip work.
 
 Trigger and path syntax live in [`docs-map.md#syntax-and-semantics`](../../actions-workflow-toolkit/references/docs-map.md#syntax-and-semantics).
 Required-check handling, including merge queue, empty matrices, failure,
@@ -89,13 +94,31 @@ Use selected-attempt `/jobs` step timings from the toolkit to find the slow area
 | Slow area | First lever | Second lever |
 |---|---|---|
 | Dependency install | `setup-*` cache input or package-manager store cache | Lockfile hygiene and branch-scope expectations |
+| Same toolchain installed every job | Custom image (larger runners) or container job with a prebuilt image | Build once and pass the artifact downstream |
+| Cache restore nearly as slow as a fresh download | Drop or narrow the cache | Fix churn and eviction |
+| Expensive jobs start before cheap checks | Fast lint/typecheck gate with `needs:` | PR-only `fail-fast` |
+| Marketplace action download dominates | Preinstalled tool or a short `run` script | Pin and cache the tool |
 | Test execution | Runner architecture or sizing experiment | Matrix split only when branches are long and independent |
 | Docker build | `buildx` cache with `type=gha` scope | Registry cache and layer ordering |
 | Checkout | Sparse checkout | Remove unnecessary LFS/submodule fetches |
-| Many tiny jobs | Consolidate jobs | Keep split only when parallelism beats fixed overhead |
+| Many tiny jobs | Consolidate jobs; each job is rounded up separately | Keep split only when parallelism beats fixed overhead and rounding |
 | One huge serialized job | Split independent long phases | Larger runner if parallelism exists inside the tool |
+| Independent steps serialized in one job | Step-level `background`/`wait` keywords | Separate jobs only if the work needs different runners |
 
-## 5. Runner-sizing arithmetic
+## 5. Storage and network branch
+
+**Conclusion:** the workflow body is fine, but artifacts, caches, or the network path cost money. Some of this lands on the customer's cloud bill.
+
+| Evidence | Lever | Guardrail |
+|---|---|---|
+| Artifacts kept far longer than anyone reads them | `retention-days` on `upload-artifact`, or a lower repo/org default | Preserve compliance and release artifacts |
+| Every matrix leg uploads the same output | Upload from one leg | Keep per-leg test reports if they differ |
+| Cache storage near quota or churning | Fewer, narrower keys; delete stale caches through the cache REST API | Don't evict caches the default branch relies on |
+| Private-networking runners pull public images/packages through NAT | Registry or package mirror near the runners | Confirm with the customer's NAT/egress bill |
+| Public-only jobs run on a VNET pool | Route to a non-VNET runner | Keep any required allowlist |
+| Pool runs out of addresses at peak | Size the subnet from configured pool maximum plus buffer | Never from average load |
+
+## 6. Runner-sizing arithmetic
 
 Runner sizing is a measurement experiment, not a vibe.
 
@@ -112,3 +135,5 @@ Decision rule:
 - If billable job-minute reduction is less than the rate multiplier, cost rises.
 - If billable job-minute reduction is more than the rate multiplier, cost falls.
 - If latency matters more than cost, say that explicitly and do not sell it as savings.
+
+Runner moves worth testing (ARM64, `ubuntu-slim`, smaller/larger tiers, Windows ARM64, macOS large vs. xlarge, GPU, VNET) are listed with their caveats in [`optimization-catalog.md#3-right-size-compute-runners`](optimization-catalog.md#3-right-size-compute-runners).

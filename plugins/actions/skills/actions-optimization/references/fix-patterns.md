@@ -352,3 +352,217 @@ jobs:
 ```
 
 If GitHub cache pressure is the bottleneck, use a registry cache instead of fighting repository cache eviction.
+
+## 9. `ubuntu-slim` for light automation
+
+Use for short jobs that only call APIs, label PRs, post comments, or run small scripts. Check the live runner reference for current specs and container limitations; anything needing Docker, service containers, or low-level host access stays on a full VM.
+
+Before:
+
+```yaml
+name: slim-before
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  pull-requests: write
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh pr edit "$PR" --add-label needs-review --repo "$REPO"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+```
+
+After:
+
+```yaml
+name: slim-after
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  pull-requests: write
+jobs:
+  label:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - run: gh pr edit "$PR" --add-label needs-review --repo "$REPO"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+```
+
+Rollback trigger: the job needs Docker, a tool missing from the image, or more memory than the slim runner provides.
+
+## 10. Fail fast: cheap gate, timeouts, PR-only matrix fail-fast
+
+Run the cheap checks first so broken PRs never pay for the expensive fan-out. Set `timeout-minutes` from observed p99 plus headroom so hung jobs stop billing.
+
+Before:
+
+```yaml
+name: gate-before
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm ci && npm run lint
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci && npm test
+```
+
+After:
+
+```yaml
+name: gate-after
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci && npm run lint
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: ${{ github.event_name == 'pull_request' }}
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci && npm test
+```
+
+The default branch keeps full matrix diagnostics; PRs stop at the first decisive failure. Rollback trigger: the gate adds more latency than it saves, or a required check context changed.
+
+## 11. Artifact retention and duplicate uploads
+
+Upload shared build output once, and keep throwaway artifacts only as long as someone reads them. Check retention defaults and limits on the live docs.
+
+Before:
+
+```yaml
+name: artifacts-before
+on:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./build.sh && ./test.sh "${{ matrix.shard }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ matrix.shard }}
+          path: dist/
+```
+
+After:
+
+```yaml
+name: artifacts-after
+on:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./build.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 3
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - run: ./test.sh "${{ matrix.shard }}"
+```
+
+This also stops each shard from rebuilding. Rollback trigger: a consumer needs the artifact longer than the new retention, or shards produce genuinely different output.
+
+## 12. Schedule hygiene
+
+Run scheduled work when someone will act on it, and avoid the top of the hour when scheduled load peaks and delays are more likely.
+
+Before:
+
+```yaml
+name: schedule-before
+on:
+  schedule:
+    - cron: "0 * * * *"
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./scan.sh
+```
+
+After:
+
+```yaml
+name: schedule-after
+on:
+  schedule:
+    - cron: "17 13 * * 1-5"
+  workflow_dispatch:
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - run: ./scan.sh
+```
+
+Prefer an event trigger (`push` to the relevant paths, `release`, `workflow_run`) when the schedule exists only to catch changes. Keep frequent schedules that guard security or release freshness, and confirm the cadence with the owner. Rollback trigger: findings now arrive too late to act on.
